@@ -276,10 +276,15 @@ class MockStore {
       throw new Error(`No account found matching "${identifier}". Please check your email/badge or register.`);
     }
 
-    // All demo accounts accept "dispatchgrid123"
-    const expectedPassword = user.password || 'dispatchgrid123';
-    if (password.trim() !== expectedPassword && password.trim() !== 'dispatchgrid123') {
-      throw new Error('Invalid password. For demo accounts, use password: dispatchgrid123');
+    // All demo accounts accept "electrogrid123" or legacy "dispatchgrid123"
+    const expectedPassword = user.password || 'electrogrid123';
+    const cleanPwd = password.trim();
+    if (
+      cleanPwd !== expectedPassword &&
+      cleanPwd !== 'electrogrid123' &&
+      cleanPwd !== 'dispatchgrid123'
+    ) {
+      throw new Error('Invalid password. For demo accounts, use password: electrogrid123 or dispatchgrid123');
     }
 
     return user;

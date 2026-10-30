@@ -218,7 +218,7 @@ export const LoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-semibold text-slate-700">Password</label>
-                <span className="text-[11px] text-blue-600 font-medium">Demo: dispatchgrid123</span>
+                <span className="text-[11px] text-blue-600 font-medium">Demo: electrogrid123</span>
               </div>
               <div className="relative">
                 <input
@@ -244,7 +244,7 @@ export const LoginPage: React.FC = () => {
             <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg flex items-start gap-2 text-xs text-slate-600">
               <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
               <span>
-                <b>Default Password:</b> <code className="text-blue-700 font-bold bg-blue-50 px-1 rounded">dispatchgrid123</code> is enabled across all 20 Mysuru technicians, supervisor & customer accounts.
+                <b>Default Password:</b> <code className="text-blue-700 font-bold bg-blue-50 px-1 rounded">electrogrid123</code> (or <code className="text-blue-700 font-bold bg-blue-50 px-1 rounded">dispatchgrid123</code>) is enabled across all 20 Mysuru technicians, supervisor & customer accounts.
               </span>
             </div>
 
