@@ -20,6 +20,10 @@ import {
   Search,
   Check,
   DollarSign,
+  Lock,
+  Receipt,
+  Download,
+  Banknote,
 } from 'lucide-react';
 
 type TabType = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'all';
@@ -88,6 +92,19 @@ export const AssignedJobsPage: React.FC = () => {
       refreshData();
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleConfirmCash = async (job: Job) => {
+    if (!user) return;
+    setIsUpdatingStatus(true);
+    try {
+      await api.confirmCashPayment(job.id, user);
+      refreshData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to confirm cash payment.');
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -228,16 +245,60 @@ export const AssignedJobsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payment Badge if completed/confirmed */}
-              {job.payment && (
-                <div className="mb-3 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between text-xs text-emerald-800">
-                  <span className="font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    Paid via Razorpay Test Mode
-                  </span>
-                  <span className="font-extrabold font-mono">
-                    ₹{job.payment.amountInr.toLocaleString('en-IN')}
-                  </span>
+              {/* Payment & Job Closure Status */}
+              {job.payment && (job.payment.status === 'completed' || job.status === 'closed') && (
+                <div className="mb-3 px-3 py-2 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-900 shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Lock className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>PAYMENT COMPLETED • JOB CLOSED</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-extrabold text-emerald-800">
+                      ₹{job.payment.amountInr.toLocaleString('en-IN')}
+                    </span>
+                    <a
+                      href={`http://localhost:8000/api/v1/payments/invoices/${job.invoice?.invoiceNumber || job.payment.receiptNumber || 'EG-2026-000001'}/pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-2 py-0.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold flex items-center gap-1 shadow-xs transition"
+                    >
+                      <Receipt className="w-3 h-3" />
+                      Receipt PDF
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Pending Payment Request Banner with Cash Confirmation Action */}
+              {job.payment && job.payment.status === 'pending' && (
+                <div className="mb-3 px-3 py-2.5 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 shadow-xs space-y-1.5">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1 text-amber-800">
+                      <Clock className="w-3.5 h-3.5" />
+                      Duration: {job.payment.durationFormatted || (job.actualDurationMinutes ? `${job.actualDurationMinutes} mins` : '75 mins')}
+                    </span>
+                    <span className="text-amber-900 font-extrabold font-mono text-sm">
+                      Labour Total: ₹{job.payment.amountInr.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  {job.damagedComponents && job.damagedComponents.length > 0 && (
+                    <div className="text-[11px] text-amber-800 bg-amber-100/60 p-1.5 rounded flex items-center justify-between">
+                      <span>Damaged Parts: {job.damagedComponents.length} reported</span>
+                      <span className="font-semibold text-amber-900">Price to be confirmed</span>
+                    </div>
+                  )}
+                  <div className="pt-1 flex items-center justify-between">
+                    <span className="text-[10px] text-amber-700 uppercase font-semibold">Payment Pending (Cash / UPI)</span>
+                    <button
+                      type="button"
+                      disabled={isUpdatingStatus}
+                      onClick={() => handleConfirmCash(job)}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                    >
+                      <Banknote className="w-3.5 h-3.5" />
+                      Confirm Cash Received
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

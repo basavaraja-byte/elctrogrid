@@ -43,6 +43,10 @@ pnpm-debug.log*
 .turbo/
 .vercel
 
+# Generated Invoices & Ephemeral Artifacts
+static/invoices/*.pdf
+**/static/invoices/*.pdf
+
 # Operating System & Editor Files
 .DS_Store
 Thumbs.db
@@ -50,3 +54,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+

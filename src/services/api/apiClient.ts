@@ -77,10 +77,32 @@ class ApiClient {
       if (!updated) throw new Error(`Job not found: ${jobId}`);
       return updated;
     }
-    return this.request<Job>(`/api/jobs/${jobId}/payment`, {
+    return this.request<Job>(`/api/v1/payments/verify`, {
       method: 'POST',
-      body: JSON.stringify(payment),
+      body: JSON.stringify({
+        booking_code: jobId,
+        razorpay_order_id: payment.razorpayOrderId || payment.orderId,
+        razorpay_payment_id: payment.razorpayPaymentId || payment.paymentId,
+        razorpay_signature: payment.razorpaySignature,
+      }),
     });
+  }
+
+  async confirmCashPayment(jobId: string, currentUser: User): Promise<Job> {
+    if (this.useMock) {
+      const updated = mockStore.confirmCashPayment(jobId, currentUser);
+      if (!updated) throw new Error(`Job not found: ${jobId}`);
+      return updated;
+    }
+    const res = await this.request<any>(`/api/v1/payments/jobs/${jobId}/cash/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({
+        job_id: jobId,
+        confirmed_by_name: currentUser.name,
+        confirmed_by_role: currentUser.role,
+      }),
+    });
+    return mockStore.getJobById(jobId) || (res as unknown as Job);
   }
 
   // --- SERVICE REQUESTS ---

@@ -21,6 +21,7 @@ from app.models.enums import (
     SLARiskLevel,
 )
 from app.models.job import Job
+from app.models.payment import DamagedComponent, Invoice, Payment
 from app.models.schedule import ScheduleVersion
 from app.models.scheduling_run import SchedulingRun
 from app.models.technician import Technician
@@ -35,12 +36,15 @@ __all__ = [
     "CANONICAL_JOB_CATEGORIES",
     "Customer",
     "CustomerType",
+    "DamagedComponent",
     "ElectricalSkill",
     "ExecutionStatus",
+    "Invoice",
     "Job",
     "JobCategory",
     "JobPriority",
     "JobStatus",
+    "Payment",
     "ScheduleVersion",
     "ScheduleVersionStatus",
     "SchedulingRun",

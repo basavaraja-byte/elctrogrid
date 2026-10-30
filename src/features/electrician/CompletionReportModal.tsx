@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api/apiClient';
-import { Job, CompletionReport } from '../../types';
+import { Job, CompletionReport, DamagedComponent } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import {
   FileCheck,
@@ -11,6 +11,9 @@ import {
   Trash2,
   AlertTriangle,
   Send,
+  Plus,
+  PackageX,
+  Info,
 } from 'lucide-react';
 
 interface CompletionReportModalProps {
@@ -48,6 +51,44 @@ export const CompletionReportModal: React.FC<CompletionReportModalProps> = ({
     'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600',
   ]);
 
+  // Module 3: Damaged Components / Replacement Parts
+  const [damagedComponents, setDamagedComponents] = useState<DamagedComponent[]>([
+    {
+      componentName: '60A Dual-Pole Circuit Breaker',
+      damageDescription: 'Thermal carbon arc degradation at load terminal',
+      quantity: 1,
+      priceStatus: 'Price to be confirmed',
+      remarks: 'Requires replacement by OEM equivalent',
+    },
+  ]);
+
+  const [newPartName, setNewPartName] = useState('');
+  const [newPartDesc, setNewPartDesc] = useState('');
+  const [newPartQty, setNewPartQty] = useState(1);
+  const [newPartRemarks, setNewPartRemarks] = useState('');
+
+  const handleAddDamagedPart = () => {
+    if (!newPartName.trim()) return;
+    setDamagedComponents([
+      ...damagedComponents,
+      {
+        componentName: newPartName.trim(),
+        damageDescription: newPartDesc.trim() || 'Physical or electrical damage requiring replacement',
+        quantity: newPartQty,
+        priceStatus: 'Price to be confirmed',
+        remarks: newPartRemarks.trim(),
+      },
+    ]);
+    setNewPartName('');
+    setNewPartDesc('');
+    setNewPartQty(1);
+    setNewPartRemarks('');
+  };
+
+  const handleRemoveDamagedPart = (idx: number) => {
+    setDamagedComponents(damagedComponents.filter((_, i) => i !== idx));
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,6 +115,7 @@ export const CompletionReportModal: React.FC<CompletionReportModalProps> = ({
         afterPhotos,
         completionTimestamp: new Date().toISOString(),
         signedOffByElectrician: user.name,
+        damagedComponents,
       };
 
       await api.updateJobStatus(
@@ -165,6 +207,106 @@ export const CompletionReportModal: React.FC<CompletionReportModalProps> = ({
             onChange={(e) => setNotes(e.target.value)}
             className="w-full px-3 py-2 border border-slate-200 rounded-lg"
           />
+        </div>
+
+        {/* Module 3: Damaged Components / Replacement Parts */}
+        <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-amber-900 font-bold">
+              <PackageX className="w-4 h-4 text-amber-600" />
+              <span>Damaged Components / Replacement Parts</span>
+            </div>
+            <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full border border-amber-200">
+              Customer Billed Separately
+            </span>
+          </div>
+
+          <div className="text-[11px] text-amber-800 bg-amber-100/50 p-2 rounded-lg flex items-start gap-1.5">
+            <Info className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <span>
+              <b>Policy Note:</b> Customer is responsible for replacement part costs. Electrician labour charges are based strictly on working duration. Component prices remain <i>"Price to be confirmed"</i> until procurement verification.
+            </span>
+          </div>
+
+          {/* List of reported damaged parts */}
+          {damagedComponents.length > 0 && (
+            <div className="space-y-2">
+              {damagedComponents.map((comp, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-amber-200 p-2.5 rounded-lg flex items-center justify-between gap-2 shadow-xs"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800">{comp.componentName}</span>
+                      <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">
+                        Qty: {comp.quantity}
+                      </span>
+                      <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-semibold border border-amber-200">
+                        {comp.priceStatus}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{comp.damageDescription}</p>
+                    {comp.remarks && (
+                      <p className="text-[10px] text-indigo-600 italic">Note: {comp.remarks}</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDamagedPart(idx)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition cursor-pointer"
+                    title="Remove item"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add Part Form */}
+          <div className="pt-2 border-t border-amber-200/60 grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+            <div className="sm:col-span-4">
+              <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Component Name</label>
+              <input
+                type="text"
+                placeholder="e.g. 60A Breaker / Contactor"
+                value={newPartName}
+                onChange={(e) => setNewPartName(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+              />
+            </div>
+            <div className="sm:col-span-5">
+              <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Damage Description</label>
+              <input
+                type="text"
+                placeholder="e.g. Burn marks, arc pitting, loose lug"
+                value={newPartDesc}
+                onChange={(e) => setNewPartDesc(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg"
+              />
+            </div>
+            <div className="sm:col-span-1">
+              <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Qty</label>
+              <input
+                type="number"
+                min={1}
+                value={newPartQty}
+                onChange={(e) => setNewPartQty(parseInt(e.target.value) || 1)}
+                className="w-full px-2 py-1.5 text-xs bg-white border border-slate-200 rounded-lg text-center"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <button
+                type="button"
+                onClick={handleAddDamagedPart}
+                className="w-full py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Part
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Verification Photos */}

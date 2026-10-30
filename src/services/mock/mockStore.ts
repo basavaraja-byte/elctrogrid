@@ -52,6 +52,36 @@ function isWaterTankProblem(item: { title?: string; description?: string }): boo
   );
 }
 
+export function calculateTimeBilling(durationMinutes: number) {
+  const mins = Math.max(1, durationMinutes);
+  const baseInr = 500;
+  let additionalBlocks = 0;
+  let additionalInr = 0;
+  if (mins > 60) {
+    additionalBlocks = Math.ceil((mins - 60) / 30);
+    additionalInr = additionalBlocks * 100;
+  }
+  const labourTotalInr = baseInr + additionalInr;
+  const hrs = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  const durationFormatted =
+    hrs > 0
+      ? `${hrs} hour${hrs !== 1 ? 's' : ''} ${remMins} min${remMins !== 1 ? 's' : ''}`
+      : `${mins} minutes`;
+
+  return {
+    durationMinutes: mins,
+    durationFormatted,
+    baseAmountInr: baseInr,
+    baseAmountPaise: baseInr * 100,
+    additionalBlocks,
+    additionalAmountInr: additionalInr,
+    additionalAmountPaise: additionalInr * 100,
+    labourTotalInr,
+    labourTotalPaise: labourTotalInr * 100,
+  };
+}
+
 class MockStore {
   private data: StoreData;
   private listeners: Set<() => void> = new Set();
@@ -815,6 +845,52 @@ class MockStore {
 
     if (completionData) {
       job.completionReport = completionData;
+      if (completionData.damagedComponents) {
+        job.damagedComponents = completionData.damagedComponents;
+      }
+    }
+
+    if (newStatus === 'in_progress' && !job.actualStartTime) {
+      job.actualStartTime = new Date().toISOString();
+    }
+
+    if (newStatus === 'completed' || newStatus === 'closed') {
+      if (!job.actualStartTime) {
+        // Fallback demo actual start time: 75 minutes prior
+        job.actualStartTime = new Date(Date.now() - 75 * 60 * 1000).toISOString();
+      }
+      if (!job.actualCompletionTime) {
+        job.actualCompletionTime = new Date().toISOString();
+      }
+
+      const startMs = new Date(job.actualStartTime).getTime();
+      const endMs = new Date(job.actualCompletionTime).getTime();
+      const diffMins = Math.max(1, Math.ceil((endMs - startMs) / 60000));
+      job.actualDurationMinutes = diffMins;
+
+      const billing = calculateTimeBilling(diffMins);
+
+      // Create PENDING payment record if not yet created or still pending
+      if (!job.payment || job.payment.status === 'pending') {
+        const paymentCode = `PAY-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        job.payment = {
+          paymentId: paymentCode,
+          paymentReference: paymentCode,
+          amountPaise: billing.labourTotalPaise,
+          amountInr: billing.labourTotalInr,
+          currency: 'INR',
+          status: 'pending',
+          method: 'CASH',
+          workStartedAt: job.actualStartTime,
+          workCompletedAt: job.actualCompletionTime,
+          durationMinutes: billing.durationMinutes,
+          durationFormatted: billing.durationFormatted,
+          baseAmountInr: billing.baseAmountInr,
+          additionalBlocks: billing.additionalBlocks,
+          additionalAmountInr: billing.additionalAmountInr,
+          labourTotalInr: billing.labourTotalInr,
+        };
+      }
     }
 
     job.timeline.push({
@@ -894,19 +970,48 @@ class MockStore {
 
     if (payment.status === 'completed') {
       const prevStatus = job.status;
-      job.status = 'customer_confirmed';
+      job.status = 'closed';
+      const invoiceNumber = `EG-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      payment.receiptNumber = invoiceNumber;
+
+      // Auto-generate invoice
+      job.invoice = {
+        id: `inv-${Date.now()}`,
+        invoiceNumber,
+        paymentId: payment.paymentId,
+        jobId: job.id,
+        customerName: job.customerName,
+        technicianName: job.assignedElectricianName || 'Field Technician',
+        serviceDescription: job.description,
+        invoiceDate: new Date().toISOString(),
+        durationMinutes: payment.durationMinutes || 75,
+        durationFormatted: payment.durationFormatted || '1 hour 15 minutes',
+        labourAmountInr: payment.baseAmountInr || 500,
+        additionalBlocks: payment.additionalBlocks || 1,
+        additionalAmountInr: payment.additionalAmountInr || 100,
+        partsStatus: 'Price to be confirmed',
+        partsAmountInr: null,
+        totalPaidInr: payment.amountInr,
+        totalPaidPaise: payment.amountPaise,
+        paymentMethod: 'UPI',
+        paymentStatus: 'PAID',
+        paymentReference: payment.paymentReference || payment.paymentId,
+        pdfUrl: `/api/v1/payments/invoices/${invoiceNumber}/pdf`,
+        damagedComponents: job.damagedComponents,
+      };
+
       job.timeline.push({
-        status: 'customer_confirmed',
+        status: 'closed',
         timestamp: new Date().toISOString(),
         updatedBy: actorUser.name,
         role: actorUser.role,
-        notes: `Paid ₹${payment.amountInr.toLocaleString('en-IN')} via Razorpay Test Mode (${payment.paymentId}). Receipt: ${payment.receiptNumber || 'REC-' + Date.now()}`,
+        notes: `Paid ₹${payment.amountInr.toLocaleString('en-IN')} via Razorpay UPI (${payment.paymentId}). Receipt: ${invoiceNumber}. Ticket Closed.`,
       });
 
       if (job.requestId) {
         const req = this.getServiceRequestById(job.requestId);
         if (req) {
-          req.status = 'customer_confirmed';
+          req.status = 'closed';
         }
       }
 
@@ -914,7 +1019,7 @@ class MockStore {
         targetRole: 'customer',
         targetUserId: job.customerId,
         title: 'Payment Successful (Razorpay Test Mode)',
-        message: `Your payment of ₹${payment.amountInr.toLocaleString('en-IN')} for ${job.id} has been verified and settled. Thank you for choosing ElectroGrid!`,
+        message: `Your payment of ₹${payment.amountInr.toLocaleString('en-IN')} for ${job.id} has been verified and settled. Official receipt ${invoiceNumber} is now available.`,
         type: 'success',
         linkUrl: `/customer/requests`,
       });
@@ -935,10 +1040,106 @@ class MockStore {
         entityType: 'job',
         entityId: job.id,
         previousValue: prevStatus,
-        newValue: 'customer_confirmed',
-        reason: `Razorpay payment verified. Payment ID: ${payment.paymentId}, Order ID: ${payment.orderId || 'N/A'}`,
+        newValue: 'closed',
+        reason: `Razorpay payment verified. Payment ID: ${payment.paymentId}, Order ID: ${payment.orderId || 'N/A'}. Receipt: ${invoiceNumber}`,
       });
     }
+
+    this.save();
+    return job;
+  }
+
+  public confirmCashPayment(jobId: string, actorUser: User): Job | null {
+    if (actorUser.role === 'customer') {
+      throw new Error('Customers cannot confirm their own cash payments. Only authorized technicians or supervisors can confirm.');
+    }
+
+    const job = this.getJobById(jobId);
+    if (!job) return null;
+
+    const invoiceNumber = `EG-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+    const nowIso = new Date().toISOString();
+    const labourInr = job.payment?.labourTotalInr || 600;
+    const durationMins = job.payment?.durationMinutes || 75;
+    const durationFmt = job.payment?.durationFormatted || '1 hour 15 minutes';
+
+    job.payment = {
+      ...(job.payment || {
+        paymentId: `PAY-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        paymentReference: `PAY-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        amountPaise: labourInr * 100,
+        amountInr: labourInr,
+        currency: 'INR',
+      }),
+      status: 'completed',
+      method: 'CASH',
+      paidAt: nowIso,
+      receiptNumber: invoiceNumber,
+      confirmedBy: actorUser.name,
+      confirmedAt: nowIso,
+      isVerified: true,
+    };
+
+    job.invoice = {
+      id: `inv-${Date.now()}`,
+      invoiceNumber,
+      paymentId: job.payment.paymentId,
+      jobId: job.id,
+      customerName: job.customerName,
+      technicianName: actorUser.name,
+      serviceDescription: job.description,
+      invoiceDate: nowIso,
+      durationMinutes: durationMins,
+      durationFormatted: durationFmt,
+      labourAmountInr: job.payment.baseAmountInr || 500,
+      additionalBlocks: job.payment.additionalBlocks || 1,
+      additionalAmountInr: job.payment.additionalAmountInr || 100,
+      partsStatus: 'Price to be confirmed',
+      partsAmountInr: null,
+      totalPaidInr: labourInr,
+      totalPaidPaise: labourInr * 100,
+      paymentMethod: 'CASH',
+      paymentStatus: 'PAID',
+      paymentReference: job.payment.paymentReference || job.payment.paymentId,
+      pdfUrl: `/api/v1/payments/invoices/${invoiceNumber}/pdf`,
+      damagedComponents: job.damagedComponents,
+    };
+
+    job.status = 'closed';
+    job.timeline.push({
+      status: 'closed',
+      timestamp: nowIso,
+      updatedBy: actorUser.name,
+      role: actorUser.role,
+      notes: `Cash payment of ₹${labourInr.toLocaleString('en-IN')} confirmed by ${actorUser.name}. Receipt: ${invoiceNumber}. Ticket closed.`,
+    });
+
+    if (job.requestId) {
+      const req = this.getServiceRequestById(job.requestId);
+      if (req) {
+        req.status = 'closed';
+      }
+    }
+
+    this.addNotification({
+      targetRole: 'customer',
+      targetUserId: job.customerId,
+      title: 'Cash Payment Confirmed & Receipt Ready',
+      message: `Your technician ${actorUser.name} confirmed receipt of ₹${labourInr.toLocaleString('en-IN')}. Official receipt ${invoiceNumber} is available for download.`,
+      type: 'success',
+      linkUrl: `/customer/requests`,
+    });
+
+    this.logAudit({
+      userId: actorUser.id,
+      userName: actorUser.name,
+      userRole: actorUser.role,
+      action: 'CASH_PAYMENT_CONFIRMED',
+      entityType: 'job',
+      entityId: job.id,
+      newValue: 'closed',
+      reason: `Cash payment of ₹${labourInr} authenticated by ${actorUser.name}. Receipt: ${invoiceNumber}`,
+    });
 
     this.save();
     return job;

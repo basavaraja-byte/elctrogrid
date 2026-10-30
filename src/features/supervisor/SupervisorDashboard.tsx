@@ -40,7 +40,19 @@ import {
   Calendar,
   Layers,
   History,
+  Receipt,
+  Banknote,
+  CreditCard,
+  Lock,
+  DollarSign,
+  Download,
+  Eye,
+  Check,
+  FileText,
+  X,
+  Wrench,
 } from 'lucide-react';
+import { mockStore } from '../../services/mock/mockStore';
 import { useNavigate } from 'react-router-dom';
 
 export const SupervisorDashboard: React.FC = () => {
@@ -120,6 +132,48 @@ export const SupervisorDashboard: React.FC = () => {
     { name: 'Medium', count: jobs.filter((j) => j.priority === 'medium').length, color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50' },
     { name: 'Low', count: jobs.filter((j) => j.priority === 'low').length, color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
   ];
+
+  // Financial & Revenue Settlement Oversight (Module 12)
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending' | 'parts'>('all');
+  const [selectedInvoiceJob, setSelectedInvoiceJob] = useState<Job | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  const billingJobs = jobs.filter(
+    (j) => j.payment || j.status === 'completed' || j.status === 'closed' || j.status === 'customer_confirmed'
+  );
+
+  const paidJobs = billingJobs.filter((j) => j.payment?.status === 'completed' || j.status === 'closed');
+  const pendingJobs = billingJobs.filter((j) => (j.payment?.status === 'pending' || j.status === 'completed') && j.status !== 'closed');
+
+  const totalCollectedInr = paidJobs.reduce((sum, j) => sum + (j.payment?.amountInr || 600), 0);
+  const cashCollectedInr = paidJobs
+    .filter((j) => j.payment?.method === 'CASH')
+    .reduce((sum, j) => sum + (j.payment?.amountInr || 600), 0);
+  const upiCollectedInr = paidJobs
+    .filter((j) => j.payment?.method === 'UPI')
+    .reduce((sum, j) => sum + (j.payment?.amountInr || 600), 0);
+  const pendingCollectionInr = pendingJobs.reduce((sum, j) => sum + (j.payment?.amountInr || 600), 0);
+
+  const jobsWithDamagedParts = billingJobs.filter((j) => j.damagedComponents && j.damagedComponents.length > 0);
+  const totalDamagedPartsCount = jobsWithDamagedParts.reduce((sum, j) => sum + (j.damagedComponents?.length || 0), 0);
+
+  const filteredBillingJobs = billingJobs.filter((j) => {
+    if (paymentFilter === 'paid') return j.payment?.status === 'completed' || j.status === 'closed';
+    if (paymentFilter === 'pending') return (j.payment?.status === 'pending' || j.status === 'completed') && j.status !== 'closed';
+    if (paymentFilter === 'parts') return j.damagedComponents && j.damagedComponents.length > 0;
+    return true;
+  });
+
+  const handleSupervisorConfirmCash = (jobId: string) => {
+    if (!user) return;
+    try {
+      mockStore.confirmCashPayment(jobId, user);
+      setActionMessage(`Cash settlement verified for ticket ${jobId}. Official receipt generated.`);
+      setTimeout(() => setActionMessage(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Error confirming cash payment');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -552,6 +606,235 @@ export const SupervisorDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Revenue & Payment Settlement Oversight (Module 12) */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="p-5 sm:px-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-slate-50 via-indigo-50/20 to-white">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+              <Banknote className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900">
+                  Revenue & Payment Settlement Oversight
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                  Time-Based Billing Engine Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Centralized financial audit: Time slabs (₹500/60m + ₹100/30m), cash reconciliations, Razorpay settlements & official tax invoices
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl self-start sm:self-auto">
+            {(['all', 'paid', 'pending', 'parts'] as const).map((filterKey) => (
+              <button
+                key={filterKey}
+                onClick={() => setPaymentFilter(filterKey)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
+                  paymentFilter === filterKey
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {filterKey === 'all' && `All Records (${billingJobs.length})`}
+                {filterKey === 'paid' && `Paid (${paidJobs.length})`}
+                {filterKey === 'pending' && `Pending (${pendingJobs.length})`}
+                {filterKey === 'parts' && `Damaged Parts (${jobsWithDamagedParts.length})`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Action toast */}
+        {actionMessage && (
+          <div className="mx-6 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              {actionMessage}
+            </span>
+            <button onClick={() => setActionMessage(null)} className="text-emerald-700 hover:text-emerald-900">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Metric Cards Row */}
+        <div className="p-5 sm:px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/40 border-b border-slate-100">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Revenue Collected</span>
+            <div className="text-xl font-extrabold text-emerald-700 mt-1">₹{totalCollectedInr.toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+              <span>Cash: <b className="text-slate-700">₹{cashCollectedInr.toLocaleString('en-IN')}</b></span>
+              <span>•</span>
+              <span>UPI: <b className="text-slate-700">₹{upiCollectedInr.toLocaleString('en-IN')}</b></span>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Pending Payment Due</span>
+            <div className="text-xl font-extrabold text-amber-700 mt-1">₹{pendingCollectionInr.toLocaleString('en-IN')}</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              <span>{pendingJobs.length} job(s) awaiting cash/UPI settlement</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Standard Rate Tariff</span>
+            <div className="text-xl font-extrabold text-indigo-700 mt-1">₹500 / 60m</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              <span>+₹100 per 30m block (exact server timestamp)</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Damaged Components Reported</span>
+            <div className="text-xl font-extrabold text-slate-800 mt-1">{totalDamagedPartsCount} parts</div>
+            <div className="text-[11px] text-amber-700 font-medium mt-0.5">
+              <span>Client responsibility (Price to be confirmed)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Audit Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/75 text-slate-500 border-b border-slate-100 font-bold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="py-3 px-4">Ticket & Service</th>
+                <th className="py-3 px-4">Customer & Tech</th>
+                <th className="py-3 px-4">Work Duration</th>
+                <th className="py-3 px-4">Labour Breakdown</th>
+                <th className="py-3 px-4">Damaged Parts</th>
+                <th className="py-3 px-4">Total Amount</th>
+                <th className="py-3 px-4">Payment Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredBillingJobs.map((j) => {
+                const isPaid = j.payment?.status === 'completed' || j.status === 'closed';
+                const receiptNum = j.invoice?.invoiceNumber || j.payment?.receiptNumber || `EG-2026-${j.id.slice(-6)}`;
+                const labourInr = j.payment?.amountInr || 600;
+                const durationTxt = j.payment?.durationFormatted || `${j.actualDurationMinutes || 75} mins`;
+                const baseInr = j.payment?.baseAmountInr || 500;
+                const addlInr = j.payment?.additionalAmountInr || 100;
+                const addlBlocks = j.payment?.additionalBlocks || 1;
+                const partsCount = j.damagedComponents?.length || 0;
+
+                return (
+                  <tr key={j.id} className="hover:bg-slate-50/60 transition">
+                    <td className="py-3 px-4">
+                      <div className="font-mono font-bold text-slate-700">{j.id}</div>
+                      <div className="font-semibold text-slate-900 truncate max-w-[180px]">{j.title}</div>
+                      {isPaid && (
+                        <div className="text-[10px] text-slate-400 font-mono">Rcpt: {receiptNum}</div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="font-bold text-slate-800">{j.customerName}</div>
+                      <div className="text-slate-500 flex items-center gap-1 text-[11px]">
+                        <HardHat className="w-3 h-3 text-slate-400" />
+                        {j.assignedElectricianName || 'Unassigned'}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="font-bold text-slate-800">{durationTxt}</span>
+                      <span className="block text-[10px] text-slate-400">Server timer verified</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-[11px] text-slate-700">
+                        Base: <span className="font-bold">₹{baseInr}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        Addl ({addlBlocks}×30m): +₹{addlInr}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {partsCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                          <Wrench className="w-2.5 h-2.5" />
+                          {partsCount} reported (To confirm)
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">None</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm font-extrabold text-slate-900">
+                        ₹{labourInr.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-[10px] text-slate-400">Labour total</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {isPaid ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3" />
+                          PAID • {j.payment?.method || 'CASH'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          <Clock className="w-3 h-3" />
+                          PENDING PAYMENT
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedInvoiceJob(j)}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                          title="View Bill Details"
+                        >
+                          <Eye className="w-3 h-3" />
+                          <span>View</span>
+                        </button>
+
+                        {isPaid ? (
+                          <a
+                            href={`http://localhost:8000/api/v1/payments/invoices/${receiptNum}/pdf`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                            title="Download PDF Tax Invoice"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>PDF</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSupervisorConfirmCash(j.id)}
+                            className="px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                            title="Supervisor Confirm Cash Received"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Confirm Cash</span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredBillingJobs.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
+                    No billing records found matching this filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Two Column Section: Live Automated Dispatch Feed + Live System Disruption/Audit Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Stream 1: Recent Automated Scheduling Decisions */}
@@ -671,6 +954,152 @@ export const SupervisorDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Supervisor Invoice / Receipt Detail Modal */}
+      {selectedInvoiceJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 text-white">
+              <div className="flex items-center gap-2.5">
+                <Receipt className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <h3 className="text-base font-extrabold">Official Tax Receipt & Settlement</h3>
+                  <p className="text-xs text-slate-300">
+                    Receipt #{selectedInvoiceJob.invoice?.invoiceNumber || selectedInvoiceJob.payment?.receiptNumber || `EG-2026-${selectedInvoiceJob.id.slice(-6)}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedInvoiceJob(null)}
+                className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs text-slate-700">
+              {/* Header Info */}
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Customer</span>
+                  <div className="font-bold text-slate-900 mt-0.5">{selectedInvoiceJob.customerName}</div>
+                  <div className="text-slate-500 text-[11px]">{selectedInvoiceJob.location.address}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Assigned Technician</span>
+                  <div className="font-bold text-slate-900 mt-0.5">
+                    {selectedInvoiceJob.assignedElectricianName || 'Field Technician'}
+                  </div>
+                  <div className="text-slate-500 text-[11px]">Ticket #{selectedInvoiceJob.id}</div>
+                </div>
+              </div>
+
+              {/* Time-Based Billing Slabs Table */}
+              <div>
+                <h4 className="font-extrabold text-slate-900 mb-2 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-600" />
+                  Service Duration & Slabs Breakdown
+                </h4>
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-600">Total Work Duration:</span>
+                    <span className="font-bold text-slate-900">
+                      {selectedInvoiceJob.payment?.durationFormatted || `${selectedInvoiceJob.actualDurationMinutes || 75} mins`}
+                    </span>
+                  </div>
+                  <div className="divide-y divide-slate-200/60 pt-1">
+                    <div className="flex justify-between py-1 text-xs">
+                      <span>First 60 minutes (Base Charge)</span>
+                      <span className="font-bold text-slate-900">₹{selectedInvoiceJob.payment?.baseAmountInr || 500}</span>
+                    </div>
+                    {(selectedInvoiceJob.payment?.additionalBlocks || 0) > 0 && (
+                      <div className="flex justify-between py-1 text-xs">
+                        <span>Additional {selectedInvoiceJob.payment?.additionalBlocks} × 30-min block(s)</span>
+                        <span className="font-bold text-slate-900">+₹{selectedInvoiceJob.payment?.additionalAmountInr}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-2 text-sm font-extrabold text-slate-900 border-t border-slate-300">
+                      <span>Total Labour Charge</span>
+                      <span className="text-emerald-700">₹{(selectedInvoiceJob.payment?.amountInr || 600).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Damaged Components Section */}
+              {selectedInvoiceJob.damagedComponents && selectedInvoiceJob.damagedComponents.length > 0 && (
+                <div>
+                  <h4 className="font-extrabold text-slate-900 mb-2 flex items-center gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                    Damaged Components Reported (Customer Responsibility)
+                  </h4>
+                  <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3 space-y-2">
+                    {selectedInvoiceJob.damagedComponents.map((part, idx) => (
+                      <div key={idx} className="flex items-start justify-between text-xs border-b border-amber-100 last:border-0 pb-1.5 last:pb-0">
+                        <div>
+                          <div className="font-bold text-slate-900">{part.componentName} (Qty: {part.quantity})</div>
+                          <div className="text-slate-600 text-[11px]">{part.damageDescription}</div>
+                          {part.remarks && <div className="text-slate-400 text-[10px] italic">Note: {part.remarks}</div>}
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          Price to be confirmed
+                        </span>
+                      </div>
+                    ))}
+                    <div className="text-[10px] text-amber-800 font-medium pt-1">
+                      * Materials & replacement parts are procured/paid separately by the client. Not included in labour service charge.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Settlement Status Banner */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Settlement Status</span>
+                  <div className="font-bold text-slate-900 text-sm">
+                    {selectedInvoiceJob.payment?.status === 'completed' || selectedInvoiceJob.status === 'closed'
+                      ? `PAID via ${selectedInvoiceJob.payment?.method || 'CASH'}`
+                      : 'PENDING PAYMENT'}
+                  </div>
+                  {selectedInvoiceJob.payment?.confirmedBy && (
+                    <div className="text-[11px] text-slate-500">
+                      Confirmed by {selectedInvoiceJob.payment.confirmedBy} on {selectedInvoiceJob.payment.paidAt ? new Date(selectedInvoiceJob.payment.paidAt).toLocaleDateString('en-IN') : 'Today'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  {(selectedInvoiceJob.payment?.status === 'completed' || selectedInvoiceJob.status === 'closed') ? (
+                    <a
+                      href={`http://localhost:8000/api/v1/payments/invoices/${selectedInvoiceJob.invoice?.invoiceNumber || selectedInvoiceJob.payment?.receiptNumber || `EG-2026-${selectedInvoiceJob.id.slice(-6)}`}/pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download PDF
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSupervisorConfirmCash(selectedInvoiceJob.id);
+                        setSelectedInvoiceJob(null);
+                      }}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Confirm Cash Received
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Demo Scenario Runner Modal */}
       <DemoScenarioRunnerModal

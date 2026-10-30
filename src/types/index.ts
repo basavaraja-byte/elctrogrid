@@ -150,6 +150,7 @@ export interface CompletionReport {
   afterPhotos: string[];
   completionTimestamp: string;
   signedOffByElectrician: string;
+  damagedComponents?: DamagedComponent[];
 }
 
 export interface CustomerFeedback {
@@ -158,22 +159,71 @@ export interface CustomerFeedback {
   submittedAt: string;
 }
 
+export interface DamagedComponent {
+  componentName: string;
+  damageDescription: string;
+  quantity: number;
+  photoUrl?: string;
+  priceStatus: string; // "Price to be confirmed"
+  estimatedPartAmountInr?: number;
+  remarks?: string;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  invoiceNumber: string; // e.g. "EG-2026-000001"
+  paymentId: string;
+  jobId: string;
+  customerId?: string;
+  technicianId?: string;
+  customerName: string;
+  technicianName: string;
+  serviceDescription: string;
+  invoiceDate: string;
+  durationMinutes: number;
+  durationFormatted: string;
+  labourAmountInr: number;
+  additionalBlocks: number;
+  additionalAmountInr: number;
+  partsStatus: string;
+  partsAmountInr?: number | null;
+  totalPaidInr: number;
+  totalPaidPaise: number;
+  paymentMethod: 'CASH' | 'UPI';
+  paymentStatus: 'PAID';
+  paymentReference: string;
+  pdfUrl?: string;
+  damagedComponents?: DamagedComponent[];
+}
+
 export interface JobPaymentRecord {
   paymentId: string;
+  paymentReference?: string;
   orderId?: string;
   amountPaise: number;
   amountInr: number;
   currency: string;
   status: 'pending' | 'completed' | 'failed';
+  method?: 'CASH' | 'UPI';
+  workStartedAt?: string;
+  workCompletedAt?: string;
+  durationMinutes?: number;
+  durationFormatted?: string;
+  baseAmountInr?: number; // ₹500
+  additionalBlocks?: number;
+  additionalAmountInr?: number;
+  labourTotalInr?: number;
   razorpayPaymentId?: string;
   razorpayOrderId?: string;
   razorpaySignature?: string;
   paidAt?: string;
-  method?: string;
+  receiptNumber?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  isVerified?: boolean;
   serviceCharge?: number;
   partsCharge?: number;
   taxAmount?: number;
-  receiptNumber?: string;
 }
 
 export interface Job {
@@ -209,9 +259,14 @@ export interface Job {
 
   // Lifecycle tracking
   timeline: JobTimelineEvent[];
+  actualStartTime?: string;
+  actualCompletionTime?: string;
+  actualDurationMinutes?: number;
+  damagedComponents?: DamagedComponent[];
   completionReport?: CompletionReport;
   feedback?: CustomerFeedback;
   payment?: JobPaymentRecord;
+  invoice?: InvoiceRecord;
 
   createdAt: string;
   updatedAt: string;

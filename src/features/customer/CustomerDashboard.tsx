@@ -18,6 +18,11 @@ import {
   MapPin,
   Calendar,
   Sparkles,
+  Receipt,
+  Download,
+  CreditCard,
+  Banknote,
+  ShieldCheck,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -175,6 +180,102 @@ export const CustomerDashboard: React.FC = () => {
               <span>Track Live Progress</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Module 10: Official Payment Receipts & Service Invoices Section */}
+      {jobs.some(
+        (j) =>
+          (j.customerId === user?.id || (user?.id === 'usr-cust-ind-1' && j.customerId.includes('ind-1'))) &&
+          (j.payment || j.status === 'completed' || j.status === 'closed')
+      ) && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <Receipt className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-slate-900">Official Payment Receipts & Bills</h3>
+                <p className="text-xs text-slate-500">View breakdown, time slabs, and download official PDF tax invoices</p>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              Verified Receipts
+            </span>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {jobs
+              .filter(
+                (j) =>
+                  (j.customerId === user?.id || (user?.id === 'usr-cust-ind-1' && j.customerId.includes('ind-1'))) &&
+                  (j.payment || j.status === 'completed' || j.status === 'closed')
+              )
+              .slice(0, 3)
+              .map((j) => {
+                const isPaid = j.payment?.status === 'completed' || j.status === 'closed';
+                const receiptNum = j.invoice?.invoiceNumber || j.payment?.receiptNumber || `EG-2026-${j.id.slice(-6)}`;
+                const labourInr = j.payment?.amountInr || 600;
+                const durationTxt = j.payment?.durationFormatted || '1 hour 15 minutes';
+
+                return (
+                  <div key={j.id} className="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-blue-700">{j.id}</span>
+                        {isPaid ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle2 className="w-3 h-3" />
+                            PAID • {j.payment?.method || 'CASH'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800">
+                            <Clock className="w-3 h-3" />
+                            PAYMENT REQUIRED
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-slate-700 font-mono">
+                          Receipt #{receiptNum}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900">{j.title}</h4>
+                      <div className="text-xs text-slate-500 flex items-center gap-4">
+                        <span>Work Duration: <b>{durationTxt}</b></span>
+                        <span>Labour Total: <b className="text-slate-800">₹{labourInr.toLocaleString('en-IN')}</b></span>
+                        {j.damagedComponents && j.damagedComponents.length > 0 && (
+                          <span className="text-amber-700 font-semibold">• {j.damagedComponents.length} part(s) reported</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const req = serviceRequests.find((r) => r.associatedJobId === j.id || r.id === j.requestId);
+                          if (req) setSelectedRequestId(req.id);
+                        }}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition cursor-pointer"
+                      >
+                        View Bill Details
+                      </button>
+                      {isPaid && (
+                        <a
+                          href={`http://localhost:8000/api/v1/payments/invoices/${receiptNum}/pdf`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download PDF
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
