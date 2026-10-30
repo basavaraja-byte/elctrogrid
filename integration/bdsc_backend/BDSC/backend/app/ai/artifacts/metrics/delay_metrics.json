@@ -1,0 +1,50 @@
+{
+  "model_name": "RandomForestClassifier",
+  "model_type": "sla_delay_classifier",
+  "version": "1.0.0",
+  "trained_at": "2026-10-30T18:43:46.758783+00:00",
+  "training_samples": 1200,
+  "test_samples": 300,
+  "target_variable": "sla_delayed",
+  "feature_columns": [
+    "job_type",
+    "priority",
+    "service_zone",
+    "predicted_duration_min",
+    "sla_slack_min",
+    "estimated_travel_min",
+    "duration_to_slack_ratio",
+    "buffer_slack_min"
+  ],
+  "metrics": {
+    "Precision": 0.875,
+    "Recall": 0.8,
+    "F1": 0.8358,
+    "ROC_AUC": 0.9857,
+    "PR_AUC": 0.9217
+  },
+  "all_candidate_metrics": {
+    "LogisticRegression (Baseline)": {
+      "Precision": 0.871,
+      "Recall": 0.7714,
+      "F1": 0.8182,
+      "ROC_AUC": 0.9884,
+      "PR_AUC": 0.9276
+    },
+    "RandomForestClassifier": {
+      "Precision": 0.875,
+      "Recall": 0.8,
+      "F1": 0.8358,
+      "ROC_AUC": 0.9857,
+      "PR_AUC": 0.9217
+    },
+    "HistGradientBoostingClassifier": {
+      "Precision": 0.875,
+      "Recall": 0.8,
+      "F1": 0.8358,
+      "ROC_AUC": 0.9887,
+      "PR_AUC": 0.9284
+    }
+  },
+  "data_provenance": "SYNTHETIC_AUGMENTED"
+}

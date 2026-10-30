@@ -1,0 +1,44 @@
+{
+  "model_name": "LinearRegression (Baseline)",
+  "model_type": "job_duration_regressor",
+  "version": "1.0.0",
+  "trained_at": "2026-10-30T18:43:46.166333+00:00",
+  "training_samples": 1200,
+  "test_samples": 300,
+  "target_variable": "actual_duration_min",
+  "feature_columns": [
+    "job_type",
+    "priority",
+    "service_zone",
+    "customer_type",
+    "skill_count",
+    "window_span_min",
+    "estimated_duration_min",
+    "hour_of_day",
+    "day_of_week"
+  ],
+  "residual_std": 23.5,
+  "metrics": {
+    "MAE": 16.47,
+    "RMSE": 22.83,
+    "R2": 0.8264
+  },
+  "all_candidate_metrics": {
+    "LinearRegression (Baseline)": {
+      "MAE": 16.47,
+      "RMSE": 22.83,
+      "R2": 0.8264
+    },
+    "RandomForestRegressor": {
+      "MAE": 17.76,
+      "RMSE": 24.03,
+      "R2": 0.8077
+    },
+    "HistGradientBoostingRegressor": {
+      "MAE": 17.79,
+      "RMSE": 23.94,
+      "R2": 0.8092
+    }
+  },
+  "data_provenance": "SYNTHETIC_AUGMENTED"
+}

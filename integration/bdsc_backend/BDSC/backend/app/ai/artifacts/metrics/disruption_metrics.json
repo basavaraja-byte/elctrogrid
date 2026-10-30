@@ -1,0 +1,48 @@
+{
+  "model_name": "HistGradientBoostingClassifier",
+  "model_type": "disruption_risk_classifier",
+  "version": "1.0.0",
+  "trained_at": "2026-10-30T18:43:47.527684+00:00",
+  "training_samples": 1200,
+  "test_samples": 300,
+  "target_variable": "disruption_occurred",
+  "feature_columns": [
+    "job_priority",
+    "service_zone",
+    "technician_workload_hours",
+    "tight_buffer_count",
+    "estimated_duration_min",
+    "overwork_index"
+  ],
+  "metrics": {
+    "Precision": 0.5366,
+    "Recall": 0.3333,
+    "F1": 0.4112,
+    "ROC_AUC": 0.7521,
+    "PR_AUC": 0.481
+  },
+  "all_candidate_metrics": {
+    "LogisticRegression (Baseline)": {
+      "Precision": 0.6923,
+      "Recall": 0.1364,
+      "F1": 0.2278,
+      "ROC_AUC": 0.7583,
+      "PR_AUC": 0.4974
+    },
+    "RandomForestClassifier": {
+      "Precision": 0.6667,
+      "Recall": 0.2424,
+      "F1": 0.3556,
+      "ROC_AUC": 0.8015,
+      "PR_AUC": 0.5462
+    },
+    "HistGradientBoostingClassifier": {
+      "Precision": 0.5366,
+      "Recall": 0.3333,
+      "F1": 0.4112,
+      "ROC_AUC": 0.7521,
+      "PR_AUC": 0.481
+    }
+  },
+  "data_provenance": "SYNTHETIC_AUGMENTED"
+}

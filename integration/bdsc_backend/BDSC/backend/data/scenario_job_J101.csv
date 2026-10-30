@@ -1,0 +1,2 @@
+job_id,trade,job_type,required_skills,priority,duration_min,zone,location_x_km,location_y_km,window_start_min,window_end_min,sla_deadline_min,status,notes
+J101,electrician,fault_diagnosis,fault_diagnosis,Critical,45,Central,10.0,10.0,630,750,720,pending,Inserted only when disruption scenario D02 is triggered

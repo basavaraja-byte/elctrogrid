@@ -1,0 +1,101 @@
+job_id,trade,job_type,required_skills,priority,duration_min,zone,location_x_km,location_y_km,window_start_min,window_end_min,sla_deadline_min,status,notes
+J001,electrician,residential_wiring,residential_wiring,Low,135,South,16.4,19.71,720,840,900,pending,Synthetic residential wiring job
+J002,electrician,safety_inspection,safety_inspection,Normal,30,West,13.86,3.19,780,960,1020,pending,Synthetic safety inspection job
+J003,electrician,ev_charger_installation,ev_charger_installation,Normal,135,North,18.57,10.92,600,720,720,pending,Synthetic ev charger installation job
+J004,electrician,ev_charger_installation,ev_charger_installation,Normal,90,West,0.61,18.21,600,720,840,pending,Synthetic ev charger installation job
+J005,electrician,ev_charger_installation,ev_charger_installation,High,90,East,13.61,3.91,660,780,780,pending,Synthetic ev charger installation job
+J006,electrician,residential_wiring,residential_wiring,Normal,120,South,11.31,18.45,840,1020,960,pending,Synthetic residential wiring job
+J007,electrician,ev_charger_installation,ev_charger_installation,Normal,105,North,6.47,17.41,720,900,960,pending,Synthetic ev charger installation job
+J008,electrician,fault_diagnosis,fault_diagnosis,High,45,South,7.7,19.03,540,720,720,pending,Synthetic fault diagnosis job
+J009,electrician,fault_diagnosis,fault_diagnosis,Normal,60,South,10.23,6.1,600,720,660,pending,Synthetic fault diagnosis job
+J010,electrician,distribution_panel_repair,distribution_panel_repair,Normal,120,West,3.44,18.24,480,720,600,pending,Synthetic distribution panel repair job
+J011,electrician,fault_diagnosis,fault_diagnosis,High,30,East,10.19,15.56,840,1020,1020,pending,Synthetic fault diagnosis job
+J012,electrician,ev_charger_installation,ev_charger_installation,Normal,180,West,0.64,6.5,840,1020,960,pending,Synthetic ev charger installation job
+J013,electrician,fault_diagnosis,fault_diagnosis,Normal,30,East,3.38,14.44,480,600,600,pending,Synthetic fault diagnosis job
+J014,electrician,ev_charger_installation,ev_charger_installation,Low,90,North,17.23,6.49,660,900,780,pending,Synthetic ev charger installation job
+J015,electrician,safety_inspection,safety_inspection,Low,90,West,11.02,5.55,720,900,840,pending,Synthetic safety inspection job
+J016,electrician,ev_charger_installation,ev_charger_installation,Normal,120,East,10.36,19.28,540,660,600,pending,Synthetic ev charger installation job
+J017,electrician,ev_charger_installation,ev_charger_installation,Normal,120,North,2.0,12.76,540,720,660,pending,Synthetic ev charger installation job
+J018,electrician,distribution_panel_repair,distribution_panel_repair,Normal,150,Central,12.11,9.29,480,660,600,pending,Synthetic distribution panel repair job
+J019,electrician,distribution_panel_repair,distribution_panel_repair,Low,120,North,7.51,16.48,780,1020,1020,pending,Synthetic distribution panel repair job
+J020,electrician,fault_diagnosis,fault_diagnosis,Critical,75,East,3.11,1.97,840,1020,960,pending,Synthetic fault diagnosis job
+J021,electrician,commercial_wiring,commercial_wiring,Normal,105,East,9.72,14.86,780,900,840,pending,Synthetic commercial wiring job
+J022,electrician,residential_wiring,residential_wiring,Normal,150,South,9.44,10.13,480,600,660,pending,Synthetic residential wiring job
+J023,electrician,residential_wiring,residential_wiring,Normal,75,North,13.88,14.42,660,900,900,pending,Synthetic residential wiring job
+J024,electrician,residential_wiring,residential_wiring,Low,150,East,3.32,18.11,600,780,720,pending,Synthetic residential wiring job
+J025,electrician,commercial_wiring,commercial_wiring,Normal,90,West,1.92,17.98,540,720,660,pending,Synthetic commercial wiring job
+J026,electrician,safety_inspection,safety_inspection,High,60,North,10.82,18.89,840,1020,1020,pending,Synthetic safety inspection job
+J027,electrician,distribution_panel_repair,distribution_panel_repair,Normal,120,Central,3.48,5.97,600,840,780,pending,Synthetic distribution panel repair job
+J028,electrician,ev_charger_installation,ev_charger_installation,Normal,105,South,16.62,7.23,600,720,720,pending,Synthetic ev charger installation job
+J029,electrician,fault_diagnosis,fault_diagnosis,Critical,60,East,14.32,2.4,780,1020,900,pending,Synthetic fault diagnosis job
+J030,electrician,safety_inspection,safety_inspection,Normal,75,South,15.54,2.97,840,1020,1020,pending,Synthetic safety inspection job
+J031,electrician,fault_diagnosis,fault_diagnosis,Critical,30,North,4.39,8.19,480,660,600,pending,Synthetic fault diagnosis job
+J032,electrician,ev_charger_installation,ev_charger_installation,High,150,Central,11.15,10.49,780,900,900,pending,Synthetic ev charger installation job
+J033,electrician,residential_wiring,residential_wiring,Normal,120,Central,5.69,4.69,660,780,720,pending,Synthetic residential wiring job
+J034,electrician,safety_inspection,safety_inspection,Normal,90,South,10.31,6.99,480,600,600,pending,Synthetic safety inspection job
+J035,electrician,distribution_panel_repair,distribution_panel_repair,High,150,East,18.16,18.83,720,900,900,pending,Synthetic distribution panel repair job
+J036,electrician,fault_diagnosis,fault_diagnosis,Normal,45,Central,7.24,12.92,480,720,540,pending,Synthetic fault diagnosis job
+J037,electrician,safety_inspection,safety_inspection,Normal,90,South,9.79,13.24,840,1020,1020,pending,Synthetic safety inspection job
+J038,electrician,safety_inspection,safety_inspection,Low,30,South,3.82,7.48,600,720,840,pending,Synthetic safety inspection job
+J039,electrician,distribution_panel_repair,distribution_panel_repair,Normal,150,Central,13.43,3.98,480,600,660,pending,Synthetic distribution panel repair job
+J040,electrician,residential_wiring,residential_wiring,Critical,120,West,14.88,12.77,720,840,840,pending,Synthetic residential wiring job
+J041,electrician,residential_wiring,residential_wiring,Low,90,North,4.52,19.14,780,900,1020,pending,Synthetic residential wiring job
+J042,electrician,distribution_panel_repair,distribution_panel_repair,Normal,135,Central,11.98,17.25,480,660,660,pending,Synthetic distribution panel repair job
+J043,electrician,residential_wiring,residential_wiring,Normal,105,South,11.76,4.35,720,900,900,pending,Synthetic residential wiring job
+J044,electrician,distribution_panel_repair,distribution_panel_repair,High,75,North,14.34,14.74,720,840,840,pending,Synthetic distribution panel repair job
+J045,electrician,safety_inspection,safety_inspection,Normal,90,West,13.75,7.28,720,900,960,pending,Synthetic safety inspection job
+J046,electrician,ev_charger_installation,ev_charger_installation,Low,120,West,2.91,3.14,660,840,840,pending,Synthetic ev charger installation job
+J047,electrician,fault_diagnosis,fault_diagnosis,Low,60,Central,9.12,4.88,540,660,780,pending,Synthetic fault diagnosis job
+J048,electrician,distribution_panel_repair,distribution_panel_repair,Normal,60,Central,13.14,3.5,660,840,720,pending,Synthetic distribution panel repair job
+J049,electrician,ev_charger_installation,ev_charger_installation,Normal,120,South,14.76,3.03,540,720,780,pending,Synthetic ev charger installation job
+J050,electrician,fault_diagnosis,fault_diagnosis,High,45,East,2.06,5.31,780,1020,900,pending,Synthetic fault diagnosis job
+J051,electrician,residential_wiring,residential_wiring,Low,90,South,8.76,0.75,600,780,660,pending,Synthetic residential wiring job
+J052,electrician,commercial_wiring,commercial_wiring,Low,90,West,9.3,11.05,600,840,720,pending,Synthetic commercial wiring job
+J053,electrician,fault_diagnosis,fault_diagnosis,Normal,45,West,10.13,3.25,600,840,840,pending,Synthetic fault diagnosis job
+J054,electrician,commercial_wiring,commercial_wiring,Low,105,South,16.64,7.02,720,900,900,pending,Synthetic commercial wiring job
+J055,electrician,ev_charger_installation,ev_charger_installation,Normal,105,West,15.99,4.94,540,660,660,pending,Synthetic ev charger installation job
+J056,electrician,safety_inspection,safety_inspection,Normal,75,Central,18.06,19.03,480,720,600,pending,Synthetic safety inspection job
+J057,electrician,residential_wiring,residential_wiring,High,105,Central,17.49,9.2,660,840,840,pending,Synthetic residential wiring job
+J058,electrician,fault_diagnosis,fault_diagnosis,Low,30,Central,18.25,10.9,600,840,720,pending,Synthetic fault diagnosis job
+J059,electrician,fault_diagnosis,fault_diagnosis,Normal,45,North,16.95,4.27,600,780,720,pending,Synthetic fault diagnosis job
+J060,electrician,residential_wiring,residential_wiring,Low,135,East,3.9,3.69,600,720,660,pending,Synthetic residential wiring job
+J061,electrician,fault_diagnosis,fault_diagnosis,Normal,75,South,10.28,3.51,540,720,780,pending,Synthetic fault diagnosis job
+J062,electrician,safety_inspection,safety_inspection,High,75,West,0.66,16.34,840,1020,900,pending,Synthetic safety inspection job
+J063,electrician,safety_inspection,safety_inspection,Low,30,Central,10.82,13.95,480,600,600,pending,Synthetic safety inspection job
+J064,electrician,ev_charger_installation,ev_charger_installation,Critical,90,South,2.54,5.42,540,660,660,pending,Synthetic ev charger installation job
+J065,electrician,ev_charger_installation,ev_charger_installation,Low,90,Central,17.39,17.2,720,900,900,pending,Synthetic ev charger installation job
+J066,electrician,fault_diagnosis,fault_diagnosis,Normal,45,South,14.27,6.73,660,780,840,pending,Synthetic fault diagnosis job
+J067,electrician,fault_diagnosis,fault_diagnosis,Low,75,East,15.31,15.85,600,780,780,pending,Synthetic fault diagnosis job
+J068,electrician,residential_wiring,residential_wiring,Critical,135,North,17.64,10.96,720,960,960,pending,Synthetic residential wiring job
+J069,electrician,fault_diagnosis,fault_diagnosis,Normal,45,Central,2.64,9.75,600,720,840,pending,Synthetic fault diagnosis job
+J070,electrician,safety_inspection,safety_inspection,Normal,45,South,1.6,19.36,840,1020,1020,pending,Synthetic safety inspection job
+J071,electrician,distribution_panel_repair,distribution_panel_repair,Critical,105,East,8.76,7.39,840,1020,1020,pending,Synthetic distribution panel repair job
+J072,electrician,safety_inspection,safety_inspection,Low,60,West,10.7,14.79,480,600,540,pending,Synthetic safety inspection job
+J073,electrician,commercial_wiring,commercial_wiring,Low,180,North,18.15,10.21,660,780,780,pending,Synthetic commercial wiring job
+J074,electrician,commercial_wiring,commercial_wiring,Low,165,West,0.62,4.35,720,900,780,pending,Synthetic commercial wiring job
+J075,electrician,safety_inspection,safety_inspection,High,60,North,0.16,10.32,660,840,780,pending,Synthetic safety inspection job
+J076,electrician,distribution_panel_repair,distribution_panel_repair,Normal,90,South,19.89,13.97,480,660,600,pending,Synthetic distribution panel repair job
+J077,electrician,commercial_wiring,commercial_wiring,Normal,165,North,0.43,8.99,720,900,840,pending,Synthetic commercial wiring job
+J078,electrician,ev_charger_installation,ev_charger_installation,Normal,180,South,18.22,11.21,780,900,960,pending,Synthetic ev charger installation job
+J079,electrician,fault_diagnosis,fault_diagnosis,Low,45,West,2.12,10.86,720,960,960,pending,Synthetic fault diagnosis job
+J080,electrician,commercial_wiring,commercial_wiring,Normal,135,Central,19.95,18.31,720,900,780,pending,Synthetic commercial wiring job
+J081,electrician,safety_inspection,safety_inspection,Low,90,West,4.77,6.98,840,960,1020,pending,Synthetic safety inspection job
+J082,electrician,ev_charger_installation,ev_charger_installation,Critical,105,South,10.44,1.63,660,840,900,pending,Synthetic ev charger installation job
+J083,electrician,fault_diagnosis,fault_diagnosis,Normal,30,South,16.85,16.1,540,720,660,pending,Synthetic fault diagnosis job
+J084,electrician,distribution_panel_repair,distribution_panel_repair,Normal,75,Central,1.74,2.85,540,780,780,pending,Synthetic distribution panel repair job
+J085,electrician,fault_diagnosis,fault_diagnosis,High,30,East,5.51,17.36,600,720,780,pending,Synthetic fault diagnosis job
+J086,electrician,ev_charger_installation,ev_charger_installation,Low,150,West,19.24,7.51,540,720,720,pending,Synthetic ev charger installation job
+J087,electrician,ev_charger_installation,ev_charger_installation,Normal,90,Central,0.31,9.35,660,900,780,pending,Synthetic ev charger installation job
+J088,electrician,ev_charger_installation,ev_charger_installation,Normal,120,North,5.91,5.26,660,780,720,pending,Synthetic ev charger installation job
+J089,electrician,safety_inspection,safety_inspection,Normal,30,East,0.57,15.59,540,660,780,pending,Synthetic safety inspection job
+J090,electrician,safety_inspection,safety_inspection,Normal,45,East,14.53,5.29,720,960,840,pending,Synthetic safety inspection job
+J091,electrician,residential_wiring,residential_wiring,Normal,75,West,6.3,17.8,660,840,840,pending,Synthetic residential wiring job
+J092,electrician,residential_wiring,residential_wiring,Normal,150,East,9.02,11.62,480,600,540,pending,Synthetic residential wiring job
+J093,electrician,distribution_panel_repair,distribution_panel_repair,Normal,150,East,11.01,19.42,540,780,660,pending,Synthetic distribution panel repair job
+J094,electrician,distribution_panel_repair,distribution_panel_repair,Normal,75,North,16.76,2.36,540,660,720,pending,Synthetic distribution panel repair job
+J095,electrician,residential_wiring,residential_wiring,Low,120,South,7.51,9.72,660,780,780,pending,Synthetic residential wiring job
+J096,electrician,ev_charger_installation,ev_charger_installation,High,90,South,5.1,0.03,840,960,900,pending,Synthetic ev charger installation job
+J097,electrician,residential_wiring,residential_wiring,High,105,East,18.59,3.65,840,960,900,pending,Synthetic residential wiring job
+J098,electrician,safety_inspection,safety_inspection,Low,75,West,13.47,4.38,480,720,720,pending,Synthetic safety inspection job
+J099,electrician,fault_diagnosis,fault_diagnosis,Critical,75,Central,18.53,1.35,780,1020,960,pending,Synthetic fault diagnosis job
+J100,electrician,commercial_wiring,ev_charger_installation|high_voltage_authorization,Normal,135,Remote_Unserved,13.21,5.89,720,840,900,pending,Intentional edge case: unserved zone and specialist authorization unavailable in dataset

@@ -1,0 +1,8 @@
+scenario_id,scenario_name,event_type,target_id,event_time_min,payload
+D01,Technician becomes unavailable,technician_unavailable,E004,720,Unavailable from 12:00 onward; preserve completed/in-progress jobs
+D02,New urgent electrical fault,urgent_job_arrival,J101,630,Insert J101: fault_diagnosis; Critical; 45 min; Central; window 10:30-12:30
+D03,Job duration increases,duration_change,J018,660,Increase remaining service duration by 45 minutes; recompute downstream feasibility
+D04,Job cancelled,job_cancelled,J027,600,Cancel pending job and recompute affected future assignments
+D05,Completed job must remain fixed,job_completed,J009,615,Mark completed; recovery must not move or reassign it
+D06,Duplicate job creation request,duplicate_request,J033,540,Submit same idempotency key twice; only one job should be created
+D07,No feasible technician case,unassignable_job,J100,780,J100 is intentionally infeasible; leave unassigned and explain constraints

@@ -1,0 +1,47 @@
+{
+  "model_name": "Ridge (Baseline)",
+  "model_type": "demand_forecaster",
+  "version": "1.0.0",
+  "trained_at": "2026-10-30T18:43:47.015066+00:00",
+  "training_days": 144,
+  "test_days": 36,
+  "target_variable": "daily_job_count",
+  "feature_columns": [
+    "service_zone",
+    "day_of_week",
+    "is_weekend",
+    "season_sin",
+    "season_cos",
+    "rolling_avg_7d"
+  ],
+  "zone_baseline_means": {
+    "Central": 16.76,
+    "East": 8.56,
+    "North": 11.64,
+    "South": 10.72,
+    "West": 7.34
+  },
+  "metrics": {
+    "MAE": 1.92,
+    "RMSE": 2.48,
+    "WAPE": 0.1699
+  },
+  "all_candidate_metrics": {
+    "Ridge (Baseline)": {
+      "MAE": 1.92,
+      "RMSE": 2.48,
+      "WAPE": 0.1699
+    },
+    "RandomForestRegressor": {
+      "MAE": 1.95,
+      "RMSE": 2.54,
+      "WAPE": 0.172
+    },
+    "HistGradientBoostingRegressor": {
+      "MAE": 2.1,
+      "RMSE": 2.75,
+      "WAPE": 0.1859
+    }
+  },
+  "data_provenance": "SYNTHETIC_AUGMENTED"
+}

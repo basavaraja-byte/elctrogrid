@@ -1,0 +1,21 @@
+technician_id,name,trade,skills,eligible_zones,home_zone,shift_start_min,shift_end_min,start_x_km,start_y_km,status
+E001,Electrician 01,electrician,fault_diagnosis|residential_wiring|safety_inspection,Central|East,North,540,990,2.47,5.78,active
+E002,Electrician 02,electrician,ev_charger_installation|fault_diagnosis|residential_wiring|safety_inspection,North|East,South,480,1020,7.01,14.83,active
+E003,Electrician 03,electrician,commercial_wiring|ev_charger_installation|fault_diagnosis|safety_inspection,West|East,East,510,990,3.69,12.27,active
+E004,Electrician 04,electrician,commercial_wiring|fault_diagnosis|safety_inspection,South|North|Central,West,480,960,14.49,9.56,active
+E005,Electrician 05,electrician,fault_diagnosis|residential_wiring|safety_inspection,North|West,Central,480,960,16.03,9.93,active
+E006,Electrician 06,electrician,commercial_wiring|fault_diagnosis|safety_inspection,North|Central|South,North,540,1020,18.58,1.44,active
+E007,Electrician 07,electrician,distribution_panel_repair|fault_diagnosis|residential_wiring|safety_inspection,East|North|South,South,540,990,18.1,19.29,active
+E008,Electrician 08,electrician,commercial_wiring|distribution_panel_repair|fault_diagnosis|safety_inspection,East|South|Central|North,East,480,1020,14.06,16.73,active
+E009,Electrician 09,electrician,commercial_wiring|distribution_panel_repair|fault_diagnosis|safety_inspection,North|West,West,510,1020,16.62,14.32,active
+E010,Electrician 10,electrician,commercial_wiring|fault_diagnosis|safety_inspection,East|South|Central|North,Central,510,1020,3.75,1.34,active
+E011,Electrician 11,electrician,distribution_panel_repair|fault_diagnosis|residential_wiring|safety_inspection,East|Central|North,North,510,1020,19.84,18.15,active
+E012,Electrician 12,electrician,commercial_wiring|fault_diagnosis|safety_inspection,South|East|North,South,540,990,19.58,13.38,active
+E013,Electrician 13,electrician,commercial_wiring|distribution_panel_repair|ev_charger_installation|fault_diagnosis|safety_inspection,East|South|North,East,480,990,0.72,10.84,active
+E014,Electrician 14,electrician,commercial_wiring|distribution_panel_repair|ev_charger_installation|fault_diagnosis|safety_inspection,North|Central|West,West,540,960,12.5,2.66,active
+E015,Electrician 15,electrician,fault_diagnosis|residential_wiring|safety_inspection,South|Central|East|West,Central,480,960,12.63,3.25,active
+E016,Electrician 16,electrician,distribution_panel_repair|fault_diagnosis|residential_wiring|safety_inspection,East|Central,North,540,960,5.83,0.9,active
+E017,Electrician 17,electrician,commercial_wiring|distribution_panel_repair|fault_diagnosis|safety_inspection,Central|South|North|West,South,540,1020,11.4,16.74,active
+E018,Electrician 18,electrician,commercial_wiring|fault_diagnosis|safety_inspection,North|Central|West|East,East,480,960,5.42,0.23,active
+E019,Electrician 19,electrician,commercial_wiring|distribution_panel_repair|fault_diagnosis|safety_inspection,West|East|Central|North,West,480,990,6.99,16.75,active
+E020,Electrician 20,electrician,commercial_wiring|fault_diagnosis|safety_inspection,West|Central|East,Central,510,960,13.31,12.47,active

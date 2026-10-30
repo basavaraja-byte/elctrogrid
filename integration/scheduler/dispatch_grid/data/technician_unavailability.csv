@@ -1,0 +1,3 @@
+unavailability_id,technician_id,start_min,end_min,reason,scenario_id
+U001,E004,720,1020,Emergency absence,D01
+U002,E011,600,690,Safety training,D02
