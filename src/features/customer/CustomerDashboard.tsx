@@ -60,7 +60,13 @@ export const CustomerDashboard: React.FC = () => {
 
   // Find most urgent active request
   const activeRequest = customerRequests.find(
-    (r) => r.status === 'en_route' || r.status === 'in_progress' || r.status === 'dispatched'
+    (r) =>
+      r.status === 'en_route' ||
+      r.status === 'in_progress' ||
+      r.status === 'dispatched' ||
+      r.status === 'acknowledged' ||
+      r.status === 'assigned' ||
+      r.status === 'awaiting_approval'
   );
 
   const activeJob = activeRequest?.associatedJobId
@@ -157,7 +163,7 @@ export const CustomerDashboard: React.FC = () => {
             <div>
               <span className="text-slate-400 block text-[11px]">Assigned Electrician</span>
               <span className="font-bold text-slate-800">
-                {activeJob.assignedElectricianName || 'Pending Final Staging'}
+                {activeJob.assignedElectricianName || activeJob.currentOffer?.technicianName || 'Assigning nearest technician...'}
               </span>
             </div>
             <div>

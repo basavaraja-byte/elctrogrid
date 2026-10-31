@@ -11,6 +11,7 @@ import { IncomingJobOfferBanner } from './IncomingJobOfferBanner';
 import { AvailabilityModal } from './AvailabilityModal';
 import { SimulatedLocationModal } from './SimulatedLocationModal';
 import { Job, JobStatus } from '../../types';
+import { resolveCurrentElectrician, isJobAssignedToElectrician } from '../../utils/technicianUtils';
 import {
   HardHat,
   Clock,
@@ -33,15 +34,8 @@ export const ElectricianDashboard: React.FC = () => {
   const { jobs, electricians, refreshData } = useApp();
   const navigate = useNavigate();
 
-  // Active technician record
-  const currentTech =
-    electricians.find(
-      (e) =>
-        e.userId === user?.id ||
-        e.id === user?.id ||
-        (user?.employeeId && e.employeeId === user.employeeId) ||
-        (user?.email && e.email.toLowerCase() === user.email.toLowerCase())
-    ) || electricians[0];
+  // Active technician record using robust multi-attribute resolution
+  const currentTech = resolveCurrentElectrician(user, electricians);
 
   const [selectedJobForReport, setSelectedJobForReport] = useState<Job | null>(null);
   const [selectedJobForComplaintReport, setSelectedJobForComplaintReport] = useState<Job | null>(null);
@@ -49,19 +43,17 @@ export const ElectricianDashboard: React.FC = () => {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // Filter jobs assigned to this technician
-  const myJobs = jobs.filter(
-    (j) => j.assignedElectricianId === currentTech?.id || (user?.id === 'usr-elec-1' && j.assignedElectricianId === 'elec-1')
-  );
+  // Filter jobs assigned to this technician using robust resolution
+  const myJobs = jobs.filter((j) => isJobAssignedToElectrician(j, currentTech, user));
 
   const activeJob = myJobs.find(
     (j) =>
-      j.status === 'assigned' ||
-      j.status === 'dispatched' ||
-      j.status === 'acknowledged' ||
-      j.status === 'en_route' ||
       j.status === 'in_progress' ||
-      j.status === 'on_hold'
+      j.status === 'en_route' ||
+      j.status === 'acknowledged' ||
+      j.status === 'dispatched' ||
+      j.status === 'assigned' ||
+      j.status === 'awaiting_approval'
   );
 
   const completedTodayCount = myJobs.filter(

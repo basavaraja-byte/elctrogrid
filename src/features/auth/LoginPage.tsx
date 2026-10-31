@@ -84,6 +84,16 @@ export const LoginPage: React.FC = () => {
   const demoAccounts = [
     {
       role: 'technician' as UserRole,
+      name: 'Chidan Kumar (Chetan Kumar)',
+      type: 'Field Electrician • Bannimantap • MYS-TECH-108',
+      email: 'chidan.k@dispatchgrid.io',
+      path: '/technician/dashboard',
+      icon: HardHat,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50 border-amber-200',
+    },
+    {
+      role: 'technician' as UserRole,
       name: 'Guruprasad Rao (18th Electrician)',
       type: 'Field Technician • Alanahalli • MYS-TECH-117',
       email: 'guruprasad.r@dispatchgrid.io',

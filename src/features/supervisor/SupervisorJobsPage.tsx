@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api/apiClient';
 import { Job, JobStatus, JobPriority } from '../../types';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { StatusBadge, PriorityBadge } from '../../components/common/StatusBadge';
@@ -18,15 +20,44 @@ import {
   ShieldCheck,
   AlertTriangle,
   Info,
+  UserCheck,
+  Zap,
 } from 'lucide-react';
 
 export const SupervisorJobsPage: React.FC = () => {
-  const { jobs, electricians } = useApp();
+  const { user } = useAuth();
+  const { jobs, electricians, refreshData } = useApp();
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [assignModalJob, setAssignModalJob] = useState<Job | null>(null);
+  const [selectedElectricianId, setSelectedElectricianId] = useState<string>('');
+  const [isAssigning, setIsAssigning] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleAssignSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignModalJob || !selectedElectricianId || !user) return;
+    setIsAssigning(true);
+    try {
+      await api.assignAndDispatchJob(
+        assignModalJob.id,
+        selectedElectricianId,
+        '10:00 AM IST',
+        '12:00 PM IST',
+        'manual',
+        user
+      );
+      refreshData();
+      setAssignModalJob(null);
+      setSelectedElectricianId('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to assign electrician');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   const filteredJobs = jobs.filter((job) => {
     if (statusFilter !== 'all' && job.status !== statusFilter) return false;
@@ -106,18 +137,28 @@ export const SupervisorJobsPage: React.FC = () => {
       ),
     },
     {
-      header: 'Inspect',
+      header: 'Actions',
       cell: (job) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedJob(job);
-          }}
-          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-          title="View Job Details"
-        >
-          <Eye className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => {
+              setAssignModalJob(job);
+              setSelectedElectricianId(job.assignedElectricianId || '');
+            }}
+            className="px-2.5 py-1 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition flex items-center gap-1 cursor-pointer"
+            title="Assign or Reassign Electrician"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{job.assignedElectricianId ? 'Reassign' : 'Assign'}</span>
+          </button>
+          <button
+            onClick={() => setSelectedJob(job)}
+            className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+            title="View Job Details"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ];
@@ -311,7 +352,18 @@ export const SupervisorJobsPage: React.FC = () => {
               </div>
             )}
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setAssignModalJob(selectedJob);
+                  setSelectedElectricianId(selectedJob.assignedElectricianId || '');
+                }}
+                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-xs"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>{selectedJob.assignedElectricianId ? 'Reassign Electrician' : 'Assign Electrician'}</span>
+              </button>
               <button
                 onClick={() => setSelectedJob(null)}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
@@ -320,6 +372,80 @@ export const SupervisorJobsPage: React.FC = () => {
               </button>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* Manual Electrician Assignment Modal */}
+      {assignModalJob && (
+        <Modal
+          isOpen={true}
+          onClose={() => setAssignModalJob(null)}
+          title={`Assign Electrician • ${assignModalJob.id}`}
+          subtitle={`Assign an electrician to: ${assignModalJob.title}`}
+          maxWidth="2xl"
+        >
+          <form onSubmit={handleAssignSubmit} className="space-y-4">
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-mono font-bold text-blue-700">{assignModalJob.id}</span>
+                <PriorityBadge priority={assignModalJob.priority} />
+              </div>
+              <p className="font-bold text-slate-800">{assignModalJob.title}</p>
+              <p className="text-slate-600 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                {assignModalJob.location.address}
+              </p>
+              {assignModalJob.assignedElectricianName && (
+                <p className="text-blue-700 font-semibold pt-1">
+                  Currently assigned to: {assignModalJob.assignedElectricianName}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Select Electrician
+              </label>
+              <select
+                value={selectedElectricianId}
+                onChange={(e) => setSelectedElectricianId(e.target.value)}
+                required
+                className="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="">-- Choose an Electrician --</option>
+                {electricians
+                  .filter((e) => e.accountStatus === 'active' || !e.accountStatus)
+                  .map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} ({e.employeeId}) • Status: {e.status.replace('_', ' ')} • Workload: {e.currentWorkload}h
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="p-3 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-800">
+              <span className="font-bold block mb-0.5">Instant Dashboard Synchronization</span>
+              Assigning this job will immediately update the selected electrician's dashboard, the customer's portal, and the supervisor tracking monitor across all open tabs.
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAssignModalJob(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!selectedElectricianId || isAssigning}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-1.5"
+              >
+                <UserCheck className="w-3.5 h-3.5" />
+                <span>{isAssigning ? 'Assigning...' : 'Confirm Assignment'}</span>
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>

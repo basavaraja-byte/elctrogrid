@@ -97,6 +97,7 @@ export function calculateTimeBilling(durationMinutes: number) {
 class MockStore {
   private data: StoreData;
   private listeners: Set<() => void> = new Set();
+  private syncChannel: BroadcastChannel | null = null;
 
   constructor() {
     this.data = this.loadFromStorage();
@@ -105,6 +106,40 @@ class MockStore {
     setInterval(() => {
       this.checkExpiredOffers();
     }, 2000);
+
+    if (typeof window !== 'undefined') {
+      // 1. Real-time cross-tab storage event listener
+      window.addEventListener('storage', (event) => {
+        if (event.key === STORAGE_KEY && event.newValue) {
+          try {
+            this.data = JSON.parse(event.newValue);
+            this.notify();
+          } catch (e) {
+            console.error('Failed to parse updated storage data', e);
+          }
+        }
+      });
+
+      // 2. BroadcastChannel for instant low-latency cross-tab synchronization
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          this.syncChannel = new BroadcastChannel('dispatchgrid_sync_bus');
+          this.syncChannel.onmessage = (msg) => {
+            if (msg.data?.type === 'STATE_UPDATED') {
+              this.data = this.loadFromStorage();
+              this.notify();
+            }
+          };
+        }
+      } catch (e) {
+        // BroadcastChannel optional fallback
+      }
+
+      // 3. Same-tab custom event sync
+      window.addEventListener('dispatchgrid_state_changed', () => {
+        this.notify();
+      });
+    }
   }
 
   private loadFromStorage(): StoreData {
@@ -187,6 +222,16 @@ class MockStore {
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
+    try {
+      if (this.syncChannel) {
+        this.syncChannel.postMessage({ type: 'STATE_UPDATED', timestamp: Date.now() });
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('dispatchgrid_state_changed'));
+      }
+    } catch (e) {
+      // Broadcast/event optional
+    }
     this.notify();
   }
 
@@ -245,6 +290,30 @@ class MockStore {
   public findUserByQuery(query: string): User | undefined {
     const q = (query || '').trim().toLowerCase();
     if (!q) return undefined;
+
+    // Special alias check for Chidan Kumar <=> Chetan Kumar
+    if (q.includes('chidan') || q.includes('chetan') || q === 'mys-tech-108' || q === 'elec-9' || q === 'usr-tech-9') {
+      const chetanElec = this.data.electricians.find(
+        (e) =>
+          e.id === 'elec-9' ||
+          e.employeeId.toUpperCase() === 'MYS-TECH-108' ||
+          e.name.toLowerCase().includes('chidan') ||
+          e.name.toLowerCase().includes('chetan') ||
+          e.email.toLowerCase().includes('chidan') ||
+          e.email.toLowerCase().includes('chetan')
+      );
+      if (chetanElec) {
+        const existing = this.data.users.find(
+          (u) =>
+            u.id === chetanElec.userId ||
+            u.email.toLowerCase() === chetanElec.email.toLowerCase() ||
+            u.email.toLowerCase().includes('chidan') ||
+            u.email.toLowerCase().includes('chetan')
+        );
+        if (existing) return existing;
+        return this.findUserByQuery(chetanElec.email);
+      }
+    }
 
     // 1. Direct email match
     let matched = this.data.users.find((u) => u.email.toLowerCase() === q);
@@ -370,12 +439,49 @@ class MockStore {
     return [...this.data.electricians];
   }
 
-  public getElectricianById(id: string): Electrician | undefined {
-    return this.data.electricians.find((e) => e.id === id);
+  public getElectricianById(idOrIdentifier: string): Electrician | undefined {
+    if (!idOrIdentifier) return undefined;
+    const clean = idOrIdentifier.trim().toLowerCase();
+
+    // 1. Direct ID, userId, employeeId, or email match
+    let found = this.data.electricians.find(
+      (e) =>
+        e.id.toLowerCase() === clean ||
+        (e.userId && e.userId.toLowerCase() === clean) ||
+        (e.employeeId && e.employeeId.toLowerCase() === clean) ||
+        e.email.toLowerCase() === clean ||
+        e.name.toLowerCase() === clean
+    );
+    if (found) return found;
+
+    // 2. Chidan Kumar <=> Chetan Kumar alias match
+    if (
+      clean.includes('chidan') ||
+      clean.includes('chetan') ||
+      clean === 'elec-9' ||
+      clean === 'usr-tech-9' ||
+      clean === 'mys-tech-108'
+    ) {
+      const alias = this.data.electricians.find(
+        (e) =>
+          e.id === 'elec-9' ||
+          e.userId === 'usr-tech-9' ||
+          (e.employeeId && e.employeeId.toUpperCase() === 'MYS-TECH-108') ||
+          e.name.toLowerCase().includes('chidan') ||
+          e.name.toLowerCase().includes('chetan')
+      );
+      if (alias) return alias;
+    }
+
+    // 3. Name substring match
+    found = this.data.electricians.find((e) => e.name.toLowerCase().includes(clean));
+    if (found) return found;
+
+    return undefined;
   }
 
   public getElectricianByUserId(userId: string): Electrician | undefined {
-    return this.data.electricians.find((e) => e.userId === userId);
+    return this.getElectricianById(userId);
   }
 
   public updateElectrician(id: string, updates: Partial<Electrician>): Electrician | undefined {
@@ -854,6 +960,8 @@ class MockStore {
     job.currentOffer = newOffer;
     if (!job.assignmentHistory) job.assignmentHistory = [];
     job.assignmentHistory.push(newOffer);
+    job.assignedElectricianId = chosenTech.id;
+    job.assignedElectricianName = chosenTech.name;
     job.status = 'awaiting_approval';
 
     if (job.requestId) {
@@ -993,6 +1101,8 @@ class MockStore {
       offer.respondedAt = new Date().toISOString();
       offer.responseReason = reason || 'Technician declined request';
       job.currentOffer = null;
+      job.assignedElectricianId = null;
+      job.assignedElectricianName = null;
 
       job.timeline.push({
         status: 'awaiting_approval',
@@ -1034,6 +1144,8 @@ class MockStore {
           const expiredTechName = job.currentOffer.technicianName;
           const attemptNum = job.currentOffer.attemptNumber;
           job.currentOffer = null;
+          job.assignedElectricianId = null;
+          job.assignedElectricianName = null;
 
           job.timeline.push({
             status: 'awaiting_approval',
@@ -1270,7 +1382,13 @@ class MockStore {
     job.scheduledEndTime = scheduledEndTime;
     job.status = 'dispatched';
     job.dispatchType = dispatchType;
+    job.currentOffer = null;
     job.updatedAt = new Date().toISOString();
+
+    if (!tech.assignedJobHistory) tech.assignedJobHistory = [];
+    if (!tech.assignedJobHistory.includes(job.id)) {
+      tech.assignedJobHistory.push(job.id);
+    }
 
     job.timeline.push({
       status: 'dispatched',

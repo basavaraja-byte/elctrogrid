@@ -336,8 +336,8 @@ const TECH_DATA = [
     locIdx: 7, // Nazarbad
   },
   {
-    name: 'Chetan Kumar',
-    email: 'chetan.k@dispatchgrid.io',
+    name: 'Chidan Kumar',
+    email: 'chidan.k@dispatchgrid.io',
     skills: ['Residential Wiring', 'Panel & Breaker Upgrades', 'Commercial Lighting'],
     certs: ['Certified Domestic Wireman', 'Energy Auditor Assistant'],
     equipment: ['Insulated Tool Set (1000V)'],

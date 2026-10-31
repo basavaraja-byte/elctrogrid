@@ -40,8 +40,13 @@ export const RequestDetailPage: React.FC<RequestDetailPageProps> = ({
     ? jobs.find((j) => j.id === request.associatedJobId)
     : undefined;
 
-  const assignedTech = job?.assignedElectricianId
-    ? electricians.find((e) => e.id === job.assignedElectricianId)
+  const assignedTech = job
+    ? electricians.find(
+        (e) =>
+          (job.assignedElectricianId && (e.id === job.assignedElectricianId || e.userId === job.assignedElectricianId || e.employeeId === job.assignedElectricianId)) ||
+          (job.assignedElectricianName && e.name.toLowerCase() === job.assignedElectricianName.toLowerCase()) ||
+          (job.currentOffer && e.id === job.currentOffer.technicianId)
+      )
     : undefined;
 
   // Feedback form state

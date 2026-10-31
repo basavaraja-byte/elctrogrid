@@ -41,7 +41,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubscribe = mockStore.subscribe(() => {
       refreshData();
     });
-    return () => unsubscribe();
+
+    const handleCustomSync = () => refreshData();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('dispatchgrid_state_changed', handleCustomSync);
+      window.addEventListener('storage', handleCustomSync);
+    }
+
+    // Safe background polling to ensure data consistency across multiple browser tabs
+    const interval = setInterval(() => {
+      refreshData();
+    }, 2000);
+
+    return () => {
+      unsubscribe();
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('dispatchgrid_state_changed', handleCustomSync);
+        window.removeEventListener('storage', handleCustomSync);
+      }
+      clearInterval(interval);
+    };
   }, [refreshData]);
 
   const jobs = mockStore.getJobs();

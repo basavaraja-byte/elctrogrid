@@ -55,6 +55,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(defaultSupervisor);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(defaultSupervisor));
     }
+
+    const handleStorageEvent = (event: StorageEvent) => {
+      if (event.key === AUTH_USER_KEY && event.newValue) {
+        try {
+          const parsed = JSON.parse(event.newValue);
+          const liveUser = mockStore.getUserById(parsed.id) || mockStore.findUserByQuery(parsed.email || parsed.id);
+          if (liveUser) setUser(liveUser);
+        } catch (e) {}
+      } else if (event.key === AUTH_USER_KEY && !event.newValue) {
+        setUser(null);
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+    return () => window.removeEventListener('storage', handleStorageEvent);
   }, []);
 
   const login = async (identifier: string, password?: string): Promise<User> => {

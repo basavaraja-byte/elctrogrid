@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api/apiClient';
 import { PriorityBadge } from '../../components/common/StatusBadge';
+import { isJobAssignedToElectrician } from '../../utils/technicianUtils';
 import {
   Clock,
   MapPin,
@@ -41,8 +42,8 @@ export const IncomingJobOfferBanner: React.FC<IncomingJobOfferBannerProps> = ({
   const offeredJob = jobs.find(
     (j) =>
       j.currentOffer &&
-      j.currentOffer.technicianId === currentTech.id &&
-      j.currentOffer.status === 'offered'
+      j.currentOffer.status === 'offered' &&
+      isJobAssignedToElectrician(j, currentTech, user)
   );
 
   const offer = offeredJob?.currentOffer;
@@ -331,3 +332,4 @@ export const IncomingJobOfferBanner: React.FC<IncomingJobOfferBannerProps> = ({
     </div>
   );
 };
+

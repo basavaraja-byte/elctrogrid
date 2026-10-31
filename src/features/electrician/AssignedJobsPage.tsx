@@ -8,6 +8,7 @@ import { CompletionReportModal } from './CompletionReportModal';
 import { IncomingJobOfferBanner } from './IncomingJobOfferBanner';
 import { CompleteComplaintReportModal } from './CompleteComplaintReportModal';
 import { api } from '../../services/api/apiClient';
+import { resolveCurrentElectrician, isJobAssignedToElectrician } from '../../utils/technicianUtils';
 import {
   HardHat,
   MapPin,
@@ -37,14 +38,7 @@ export const AssignedJobsPage: React.FC = () => {
   const { user } = useAuth();
   const { jobs, electricians, refreshData } = useApp();
 
-  const currentTech =
-    electricians.find(
-      (e) =>
-        e.userId === user?.id ||
-        e.id === user?.id ||
-        (user?.employeeId && e.employeeId === user.employeeId) ||
-        (user?.email && e.email.toLowerCase() === user.email.toLowerCase())
-    ) || electricians[0];
+  const currentTech = resolveCurrentElectrician(user, electricians);
 
   const [selectedJobForReport, setSelectedJobForReport] = useState<Job | null>(null);
   const [selectedJobForComplaintReport, setSelectedJobForComplaintReport] = useState<Job | null>(null);
@@ -52,16 +46,17 @@ export const AssignedJobsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  // All jobs assigned to this technician
-  const myJobs = jobs.filter(
-    (j) =>
-      j.assignedElectricianId === currentTech?.id ||
-      (user?.id === 'usr-elec-1' && j.assignedElectricianId === 'elec-1') ||
-      (user?.role === 'technician' && !j.assignedElectricianId)
-  );
+  // All jobs assigned to this technician using robust multi-attribute resolution
+  const myJobs = jobs.filter((j) => isJobAssignedToElectrician(j, currentTech, user));
 
   // Tab categorization logic
-  const assignedJobs = myJobs.filter((j) => j.status === 'assigned' || j.status === 'dispatched');
+  const assignedJobs = myJobs.filter(
+    (j) =>
+      j.status === 'assigned' ||
+      j.status === 'dispatched' ||
+      j.status === 'awaiting_approval' ||
+      j.status === 'awaiting_assignment'
+  );
   const acceptedJobs = myJobs.filter((j) => j.status === 'acknowledged');
   const inProgressJobs = myJobs.filter(
     (j) => j.status === 'en_route' || j.status === 'in_progress' || j.status === 'on_hold'
@@ -343,8 +338,11 @@ export const AssignedJobsPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-1.5">
-                {/* 1. ASSIGNED -> ACCEPTED */}
-                {(job.status === 'assigned' || job.status === 'dispatched') && (
+                {/* 1. ASSIGNED / OFFERED -> ACCEPTED */}
+                {(job.status === 'assigned' ||
+                  job.status === 'dispatched' ||
+                  job.status === 'awaiting_approval' ||
+                  job.status === 'awaiting_assignment') && (
                   <button
                     disabled={isUpdatingStatus}
                     onClick={() => handleTransitionStatus(job, 'acknowledged', 'Accepted assignment')}
