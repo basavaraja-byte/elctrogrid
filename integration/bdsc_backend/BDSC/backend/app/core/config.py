@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     # CORS Origins
     cors_origins: str = Field(
-        default="http://localhost:3000,http://localhost:5173",
+        default="http://localhost:3000,http://localhost:5173,https://elctrogrid.vercel.app",
         alias="CORS_ORIGINS",
     )
 

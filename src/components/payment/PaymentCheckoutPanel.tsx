@@ -28,6 +28,8 @@ import {
   Check,
 } from 'lucide-react';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 interface PaymentCheckoutPanelProps {
   job: Job;
   onPaymentSuccess?: () => void;
@@ -76,7 +78,7 @@ export const PaymentCheckoutPanel: React.FC<PaymentCheckoutPanelProps> = ({
 
   // Check backend Razorpay config
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/payments/config')
+    fetch(`${API_BASE_URL}/api/v1/payments/config`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data && data.razorpay_configured) {
@@ -220,7 +222,7 @@ export const PaymentCheckoutPanel: React.FC<PaymentCheckoutPanelProps> = ({
   // =========================================================================
   if (isPaid) {
     const p = job.payment!;
-    const pdfDownloadUrl = `http://localhost:8000/api/v1/payments/invoices/${receiptNo}/pdf`;
+    const pdfDownloadUrl = `${API_BASE_URL}/api/v1/payments/invoices/${receiptNo}/pdf`;
 
     return (
       <div className="bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/40 rounded-2xl p-5 sm:p-6 border-2 border-emerald-400 shadow-sm space-y-4">

@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
   const { serviceRequests, jobs, notifications } = useApp();
@@ -263,7 +265,7 @@ export const CustomerDashboard: React.FC = () => {
                       </button>
                       {isPaid && (
                         <a
-                          href={`http://localhost:8000/api/v1/payments/invoices/${receiptNum}/pdf`}
+                          href={`${API_BASE_URL}/api/v1/payments/invoices/${receiptNum}/pdf`}
                           target="_blank"
                           rel="noreferrer"
                           className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"

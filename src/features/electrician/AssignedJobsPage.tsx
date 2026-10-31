@@ -28,6 +28,8 @@ import {
 
 type TabType = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'all';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const AssignedJobsPage: React.FC = () => {
   const { user } = useAuth();
   const { jobs, electricians, refreshData } = useApp();
@@ -257,7 +259,7 @@ export const AssignedJobsPage: React.FC = () => {
                       ₹{job.payment.amountInr.toLocaleString('en-IN')}
                     </span>
                     <a
-                      href={`http://localhost:8000/api/v1/payments/invoices/${job.invoice?.invoiceNumber || job.payment.receiptNumber || 'EG-2026-000001'}/pdf`}
+                      href={`${API_BASE_URL}/api/v1/payments/invoices/${job.invoice?.invoiceNumber || job.payment.receiptNumber || 'EG-2026-000001'}/pdf`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-2 py-0.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold flex items-center gap-1 shadow-xs transition"

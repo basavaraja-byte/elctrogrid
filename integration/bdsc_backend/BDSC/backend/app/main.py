@@ -1,5 +1,6 @@
 """FastAPI application entrypoint for DISPATCHGRID (Integrated Monolith)."""
 
+from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -50,6 +51,17 @@ def create_app() -> FastAPI:
     def root_redirect() -> RedirectResponse:
         """Redirect root URL to interactive Swagger UI documentation."""
         return RedirectResponse(url="/docs")
+
+    @app.get("/health", tags=["Health"])
+    @app.get("/healthz", tags=["Health"], include_in_schema=False)
+    def root_health() -> dict:
+        """Root-level health check endpoint for cloud platforms (Render, Vercel, K8s)."""
+        return {
+            "status": "healthy",
+            "service": settings.app_name,
+            "environment": settings.app_env,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
     prefix = settings.api_v1_prefix
     # 1. Core Field Service Management & Persistence Routes

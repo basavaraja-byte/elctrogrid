@@ -16,6 +16,12 @@ class Base(DeclarativeBase):
 
 def _build_engine(db_url: str) -> Engine:
     """Create a synchronous SQLAlchemy Engine with driver-appropriate options."""
+    # Normalize PostgreSQL URL scheme for psycopg v3 compatibility
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
     connect_args: dict = {}
     if db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False

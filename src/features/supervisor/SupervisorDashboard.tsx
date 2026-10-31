@@ -55,6 +55,8 @@ import {
 import { mockStore } from '../../services/mock/mockStore';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export const SupervisorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { jobs, electricians, disruptions, auditLogs } = useApp();
@@ -797,7 +799,7 @@ export const SupervisorDashboard: React.FC = () => {
 
                         {isPaid ? (
                           <a
-                            href={`http://localhost:8000/api/v1/payments/invoices/${receiptNum}/pdf`}
+                            href={`${API_BASE_URL}/api/v1/payments/invoices/${receiptNum}/pdf`}
                             target="_blank"
                             rel="noreferrer"
                             className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-xs transition cursor-pointer"
@@ -1073,7 +1075,7 @@ export const SupervisorDashboard: React.FC = () => {
                 <div>
                   {(selectedInvoiceJob.payment?.status === 'completed' || selectedInvoiceJob.status === 'closed') ? (
                     <a
-                      href={`http://localhost:8000/api/v1/payments/invoices/${selectedInvoiceJob.invoice?.invoiceNumber || selectedInvoiceJob.payment?.receiptNumber || `EG-2026-${selectedInvoiceJob.id.slice(-6)}`}/pdf`}
+                      href={`${API_BASE_URL}/api/v1/payments/invoices/${selectedInvoiceJob.invoice?.invoiceNumber || selectedInvoiceJob.payment?.receiptNumber || `EG-2026-${selectedInvoiceJob.id.slice(-6)}`}/pdf`}
                       target="_blank"
                       rel="noreferrer"
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition cursor-pointer"
