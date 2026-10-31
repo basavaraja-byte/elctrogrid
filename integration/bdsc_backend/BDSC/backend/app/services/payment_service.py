@@ -1,5 +1,7 @@
 """Comprehensive Payment, Billing, Damaged Components & Invoicing Service."""
 
+from __future__ import annotations
+
 from datetime import datetime, timezone
 import hashlib
 import hmac
@@ -18,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models.enums import JobStatus
+from app.models.job import Job
 from app.models.payment import DamagedComponent, Invoice, Payment
 from app.schemas.payment import (
     BillingCalculation,
