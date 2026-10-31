@@ -233,6 +233,62 @@ class ApiClient {
     });
   }
 
+  // --- 1-BY-1 ASSIGNMENT & TIMEOUT ---
+  async startAutomaticAssignment(jobId: string) {
+    if (this.useMock) return mockStore.startAutomaticAssignment(jobId);
+    return this.request(`/api/v1/scheduling/dispatch/jobs/${jobId}/offer`, {
+      method: 'POST',
+    });
+  }
+
+  async acceptAssignmentOffer(jobId: string, electricianId: string, user: User) {
+    if (this.useMock) return mockStore.acceptAssignmentOffer(jobId, electricianId, user);
+    return this.request(`/api/v1/scheduling/dispatch/jobs/${jobId}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ electricianId, userId: user.id }),
+    });
+  }
+
+  async rejectAssignmentOffer(jobId: string, electricianId: string, reason: string, user: User) {
+    if (this.useMock) return mockStore.rejectAssignmentOffer(jobId, electricianId, reason, user);
+    return this.request(`/api/v1/scheduling/dispatch/jobs/${jobId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ electricianId, reason }),
+    });
+  }
+
+  // --- SUPERVISOR ELECTRICIAN MANAGEMENT ---
+  async addElectrician(data: any, supervisorUser: User) {
+    if (this.useMock) return mockStore.addElectrician(data, supervisorUser);
+    return this.request('/api/technicians', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateElectricianAccountStatus(id: string, status: 'active' | 'inactive' | 'suspended', supervisorUser: User, reason?: string) {
+    if (this.useMock) return mockStore.updateElectricianAccountStatus(id, status, supervisorUser, reason);
+    return this.request(`/api/technicians/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, reason }),
+    });
+  }
+
+  async resetElectricianPassword(id: string, supervisorUser: User) {
+    if (this.useMock) return mockStore.resetElectricianPassword(id, supervisorUser);
+    return this.request(`/api/technicians/${id}/reset-password`, {
+      method: 'POST',
+    });
+  }
+
+  async updateElectricianProfile(id: string, updates: Partial<Electrician>, supervisorUser: User) {
+    if (this.useMock) return mockStore.updateElectricianProfile(id, updates, supervisorUser);
+    return this.request(`/api/technicians/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
   // --- INTELLIGENT SCHEDULING ---
   async optimizeSchedule(jobId: string): Promise<ScheduleRecommendationResult> {
     if (this.useMock) return generateScheduleRecommendations(jobId);

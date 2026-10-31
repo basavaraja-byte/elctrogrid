@@ -26,6 +26,8 @@ import { SupervisorWorkforcePage } from '../features/supervisor/SupervisorWorkfo
 import { SupervisorAutomatedSchedulingPage } from '../features/supervisor/SupervisorAutomatedSchedulingPage';
 import { SupervisorRecoveryPage } from '../features/supervisor/SupervisorRecoveryPage';
 import { SupervisorAuditPage } from '../features/supervisor/SupervisorAuditPage';
+import { SupervisorElectricianManagementPage } from '../features/supervisor/SupervisorElectricianManagementPage';
+import { SupervisorAssignmentMonitorPage } from '../features/supervisor/SupervisorAssignmentMonitorPage';
 
 export const AppRoutes: React.FC = () => {
   const { role, isAuthenticated } = useAuth();
@@ -176,6 +178,22 @@ export const AppRoutes: React.FC = () => {
           element={
             <RoleRoute allowedRoles={['supervisor', 'operations', 'dispatcher', 'management']}>
               <SupervisorAuditPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/supervisor/electricians"
+          element={
+            <RoleRoute allowedRoles={['supervisor', 'operations', 'dispatcher', 'management']}>
+              <SupervisorElectricianManagementPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/supervisor/assignment-monitor"
+          element={
+            <RoleRoute allowedRoles={['supervisor', 'operations', 'dispatcher', 'management']}>
+              <SupervisorAssignmentMonitorPage />
             </RoleRoute>
           }
         />

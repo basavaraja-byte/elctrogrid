@@ -22,12 +22,14 @@ import {
   AlertTriangle,
   Info,
   Calendar,
+  UserPlus,
 } from 'lucide-react';
+import { SupervisorElectricianManagement } from './components/SupervisorElectricianManagement';
 
 export const SupervisorWorkforcePage: React.FC = () => {
   const { electricians, jobs } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'cards' | 'gantt'>('cards');
+  const [activeTab, setActiveTab] = useState<'cards' | 'gantt' | 'management'>('cards');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [shiftFilter, setShiftFilter] = useState<string>('all');
@@ -121,7 +123,7 @@ export const SupervisorWorkforcePage: React.FC = () => {
           </p>
         </div>
 
-        {/* View Switcher: Fleet Cards vs Gantt Timeline */}
+        {/* View Switcher: Fleet Cards vs Gantt Timeline vs Electrician Management */}
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-xs">
             <button
@@ -144,7 +146,18 @@ export const SupervisorWorkforcePage: React.FC = () => {
               }`}
             >
               <CalendarDays className="w-3.5 h-3.5" />
-              <span>Schedule Timeline (Gantt)</span>
+              <span>Schedule Timeline</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('management')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition flex items-center gap-1.5 ${
+                activeTab === 'management'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Electrician Management</span>
             </button>
           </div>
         </div>
@@ -176,46 +189,53 @@ export const SupervisorWorkforcePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by technician name, employee ID, skill, or certification..."
-              className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            />
-          </div>
+      {/* ================= TAB 3: ELECTRICIAN MANAGEMENT (HIRE & FLEET ADMIN) ================= */}
+      {activeTab === 'management' && (
+        <SupervisorElectricianManagement />
+      )}
 
-          <div className="flex items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="all">All Duty Statuses</option>
-              <option value="available">Available</option>
-              <option value="en_route">En Route</option>
-              <option value="busy">Busy / On-Site</option>
-            </select>
+      {/* Filter and Search Bar (For Fleet Cards and Gantt) */}
+      {activeTab !== 'management' && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by technician name, employee ID, skill, or certification..."
+                className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
 
-            <select
-              value={shiftFilter}
-              onChange={(e) => setShiftFilter(e.target.value)}
-              className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="all">All Shifts</option>
-              <option value="morning">Morning Shift (08:00 - 16:30)</option>
-              <option value="afternoon">Afternoon Shift (12:00 - 20:30)</option>
-              <option value="night">Night Shift (20:00 - 04:30)</option>
-              <option value="flexible">Flexible Shift</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="all">All Duty Statuses</option>
+                <option value="available">Available</option>
+                <option value="en_route">En Route</option>
+                <option value="busy">Busy / On-Site</option>
+              </select>
+
+              <select
+                value={shiftFilter}
+                onChange={(e) => setShiftFilter(e.target.value)}
+                className="px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="all">All Shifts</option>
+                <option value="morning">Morning Shift (08:00 - 16:30)</option>
+                <option value="afternoon">Afternoon Shift (12:00 - 20:30)</option>
+                <option value="night">Night Shift (20:00 - 04:30)</option>
+                <option value="flexible">Flexible Shift</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ================= TAB 1: FLEET CARDS ================= */}
       {activeTab === 'cards' && (

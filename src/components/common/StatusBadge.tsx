@@ -26,6 +26,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className = ''
         return { label: 'Scheduling', bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' };
       case 'awaiting_approval':
         return { label: 'Awaiting Approval', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300' };
+      case 'awaiting_assignment':
+        return { label: 'Awaiting Assignment', bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-300' };
       case 'assigned':
         return { label: 'Assigned', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' };
       case 'dispatched':

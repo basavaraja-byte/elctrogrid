@@ -6,6 +6,8 @@ import { KPICard } from '../../components/common/KPICard';
 import { StatusBadge, PriorityBadge } from '../../components/common/StatusBadge';
 import { Avatar } from '../../components/common/Avatar';
 import { CompletionReportModal } from './CompletionReportModal';
+import { CompleteComplaintReportModal } from './CompleteComplaintReportModal';
+import { IncomingJobOfferBanner } from './IncomingJobOfferBanner';
 import { AvailabilityModal } from './AvailabilityModal';
 import { SimulatedLocationModal } from './SimulatedLocationModal';
 import { Job, JobStatus } from '../../types';
@@ -42,6 +44,7 @@ export const ElectricianDashboard: React.FC = () => {
     ) || electricians[0];
 
   const [selectedJobForReport, setSelectedJobForReport] = useState<Job | null>(null);
+  const [selectedJobForComplaintReport, setSelectedJobForComplaintReport] = useState<Job | null>(null);
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -162,6 +165,14 @@ export const ElectricianDashboard: React.FC = () => {
         />
       </div>
 
+      {/* Feature 1: Intelligent Incoming Job Offer Banner with 60s live countdown */}
+      {currentTech && (
+        <IncomingJobOfferBanner
+          currentTech={currentTech}
+          onViewReport={(j) => setSelectedJobForComplaintReport(j)}
+        />
+      )}
+
       {/* PRIMARY ACTIVE FIELD WORKSPACE CARD */}
       {activeJob ? (
         <div className="bg-white rounded-2xl border-2 border-blue-500 p-5 shadow-lg relative overflow-hidden">
@@ -196,17 +207,27 @@ export const ElectricianDashboard: React.FC = () => {
               <div>
                 <span className="font-bold text-slate-900 block">Customer Service Address</span>
                 <span className="text-slate-600">{activeJob.location.address}, {activeJob.location.city}</span>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    activeJob.location.address
-                  )}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-1 text-blue-600 font-bold flex items-center gap-1 hover:underline text-[11px]"
-                >
-                  <Navigation className="w-3 h-3" />
-                  Open Turn-by-Turn Navigation
-                </a>
+                <div className="mt-1.5 flex flex-wrap items-center gap-3">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      activeJob.location.address
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 font-bold flex items-center gap-1 hover:underline text-[11px]"
+                  >
+                    <Navigation className="w-3 h-3" />
+                    Open Maps
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJobForComplaintReport(activeJob)}
+                    className="text-indigo-600 font-bold flex items-center gap-1 hover:underline text-[11px] cursor-pointer"
+                  >
+                    <FileCheck className="w-3 h-3" />
+                    Full Complaint Report
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -402,6 +423,15 @@ export const ElectricianDashboard: React.FC = () => {
       <SimulatedLocationModal
         isOpen={isLocationOpen}
         onClose={() => setIsLocationOpen(false)}
+      />
+
+      {/* Feature 2: Complete Customer Complaint Report Dialog */}
+      <CompleteComplaintReportModal
+        job={selectedJobForComplaintReport}
+        electrician={currentTech}
+        isOpen={Boolean(selectedJobForComplaintReport)}
+        onClose={() => setSelectedJobForComplaintReport(null)}
+        onOpenWorkReport={(j) => setSelectedJobForReport(j)}
       />
     </div>
   );

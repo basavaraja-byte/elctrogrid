@@ -37,6 +37,7 @@ export type JobStatus =
   | 'validated'
   | 'scheduling'
   | 'awaiting_approval'
+  | 'awaiting_assignment'
   | 'assigned'
   | 'dispatched'
   | 'acknowledged'
@@ -105,6 +106,39 @@ export interface Electrician {
   };
   rating: number; // 1-5
   jobsCompletedTotal: number;
+  accountStatus?: 'active' | 'inactive' | 'suspended';
+  registeredAddress?: string;
+  experienceYears?: number;
+  emergencyContact?: string;
+  isTemporaryPassword?: boolean;
+  temporaryPasswordPlain?: string;
+  assignedJobHistory?: string[];
+}
+
+export type OfferStatus = 'offered' | 'accepted' | 'rejected' | 'timed_out' | 'cancelled';
+
+export interface AssignmentOfferItem {
+  offerId: string;
+  jobId: string;
+  jobTitle: string;
+  category: ProblemCategory;
+  priority: JobPriority;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  customerLocation: LocationCoordinates;
+  description: string;
+  attachments?: string[];
+  additionalInstructions?: string;
+  technicianId: string;
+  technicianName: string;
+  status: OfferStatus;
+  offeredAt: string; // ISO string
+  expiresAt: string; // ISO string
+  respondedAt?: string; // ISO string
+  responseReason?: string;
+  attemptNumber: number;
+  estimatedDistanceKm?: number;
 }
 
 export type Technician = Electrician;
@@ -267,6 +301,13 @@ export interface Job {
   feedback?: CustomerFeedback;
   payment?: JobPaymentRecord;
   invoice?: InvoiceRecord;
+
+  // Intelligent Assignment & Complete Report Extensions
+  attachments?: string[];
+  additionalInstructions?: string;
+  customerEmail?: string;
+  currentOffer?: AssignmentOfferItem | null;
+  assignmentHistory?: AssignmentOfferItem[];
 
   createdAt: string;
   updatedAt: string;

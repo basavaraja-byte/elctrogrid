@@ -7,6 +7,7 @@ import { Avatar } from '../../components/common/Avatar';
 import { LeafletMap } from '../../components/maps/LeafletMap';
 import { DemoScenarioRunnerModal } from '../../components/demo/DemoScenarioRunnerModal';
 import { AIInsightsPanel } from './components/AIInsightsPanel';
+import { SupervisorAssignmentMonitor } from './components/SupervisorAssignmentMonitor';
 import { formatTimeIST, formatDateTimeIST } from '../../utils/formatters';
 import { Electrician, Job } from '../../types';
 import {
@@ -51,6 +52,7 @@ import {
   FileText,
   X,
   Wrench,
+  Users,
 } from 'lucide-react';
 import { mockStore } from '../../services/mock/mockStore';
 import { useNavigate } from 'react-router-dom';
@@ -212,6 +214,20 @@ export const SupervisorDashboard: React.FC = () => {
               <span>Simulate Disruption</span>
             </button>
             <button
+              onClick={() => navigate('/supervisor/assignment-monitor')}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-blue-600/30 transition"
+            >
+              <Radio className="w-3.5 h-3.5 animate-pulse" />
+              <span>Assignment Monitor</span>
+            </button>
+            <button
+              onClick={() => navigate('/supervisor/electricians')}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold flex items-center gap-2 border border-white/15 transition"
+            >
+              <Users className="w-3.5 h-3.5 text-blue-300" />
+              <span>Hire Electricians</span>
+            </button>
+            <button
               onClick={() => navigate('/supervisor/workforce')}
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold flex items-center gap-2 border border-white/15 transition"
             >
@@ -296,6 +312,9 @@ export const SupervisorDashboard: React.FC = () => {
           bgColor="bg-teal-50"
         />
       </div>
+
+      {/* Live 1-by-1 Electrician Assignment & Dispatch Monitor */}
+      <SupervisorAssignmentMonitor />
 
       {/* AI Intelligence & Predictive Risk Section */}
       <AIInsightsPanel jobs={jobs} electricians={electricians} />

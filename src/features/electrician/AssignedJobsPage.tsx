@@ -5,6 +5,8 @@ import { Job, JobStatus } from '../../types';
 import { StatusBadge, PriorityBadge } from '../../components/common/StatusBadge';
 import { Avatar } from '../../components/common/Avatar';
 import { CompletionReportModal } from './CompletionReportModal';
+import { IncomingJobOfferBanner } from './IncomingJobOfferBanner';
+import { CompleteComplaintReportModal } from './CompleteComplaintReportModal';
 import { api } from '../../services/api/apiClient';
 import {
   HardHat,
@@ -24,6 +26,7 @@ import {
   Receipt,
   Download,
   Banknote,
+  FileText,
 } from 'lucide-react';
 
 type TabType = 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'all';
@@ -44,6 +47,7 @@ export const AssignedJobsPage: React.FC = () => {
     ) || electricians[0];
 
   const [selectedJobForReport, setSelectedJobForReport] = useState<Job | null>(null);
+  const [selectedJobForComplaintReport, setSelectedJobForComplaintReport] = useState<Job | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('assigned');
   const [searchQuery, setSearchQuery] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -171,6 +175,14 @@ export const AssignedJobsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Feature 1: Intelligent Incoming Job Offer Banner with 60s live countdown */}
+      {currentTech && (
+        <IncomingJobOfferBanner
+          currentTech={currentTech}
+          onViewReport={(j) => setSelectedJobForComplaintReport(j)}
+        />
+      )}
 
       {/* 4 SEGREGATED STAGE TABS */}
       <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap gap-1">
@@ -307,17 +319,28 @@ export const AssignedJobsPage: React.FC = () => {
 
             {/* Stepper Buttons for this job */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  job.location.address
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs text-blue-600 font-bold flex items-center gap-1 hover:underline"
-              >
-                <Navigation className="w-3 h-3" />
-                Navigate
-              </a>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedJobForComplaintReport(job)}
+                  className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 hover:underline cursor-pointer"
+                  title="View Complete Customer Complaint Report & Attachments"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Full Report</span>
+                </button>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    job.location.address
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-slate-600 font-bold flex items-center gap-1 hover:underline"
+                >
+                  <Navigation className="w-3 h-3" />
+                  Navigate
+                </a>
+              </div>
 
               <div className="flex items-center gap-1.5">
                 {/* 1. ASSIGNED -> ACCEPTED */}
@@ -422,6 +445,15 @@ export const AssignedJobsPage: React.FC = () => {
         job={selectedJobForReport}
         isOpen={!!selectedJobForReport}
         onClose={() => setSelectedJobForReport(null)}
+      />
+
+      {/* Feature 2: Complete Customer Complaint Report Dialog */}
+      <CompleteComplaintReportModal
+        job={selectedJobForComplaintReport}
+        electrician={currentTech}
+        isOpen={Boolean(selectedJobForComplaintReport)}
+        onClose={() => setSelectedJobForComplaintReport(null)}
+        onOpenWorkReport={(j) => setSelectedJobForReport(j)}
       />
     </div>
   );

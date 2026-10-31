@@ -173,6 +173,40 @@ export const RequestDetailPage: React.FC<RequestDetailPageProps> = ({
           </div>
         )}
 
+        {/* Intelligent Assignment Live Progress Banner */}
+        {job?.currentOffer && job.currentOffer.status === 'offered' && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4 border border-amber-200 shadow-xs">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-900">
+                  Electrician Assignment In Progress (Attempt #{job.currentOffer.attemptNumber})
+                </h4>
+              </div>
+              <span className="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">
+                60s Acceptance Window
+              </span>
+            </div>
+            <p className="text-xs text-amber-900 leading-relaxed">
+              Dispatch offer sent to nearest available electrician <b className="font-semibold text-slate-900">{job.currentOffer.technicianName}</b> (~{job.currentOffer.estimatedDistanceKm?.toFixed(1) || '1.8'} km from your location). Awaiting confirmation...
+            </p>
+          </div>
+        )}
+
+        {(request.status === 'awaiting_assignment' || job?.status === 'awaiting_assignment') && !job?.currentOffer && (
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <h4 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                Awaiting Operations Dispatch Allocation
+              </h4>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              All immediate nearest candidate electricians are currently engaged on active repairs. Central Dispatch has been alerted to prioritize your ticket.
+            </p>
+          </div>
+        )}
+
         {/* Assigned Electrician Card */}
         {assignedTech && (
           <div className="bg-blue-50/60 rounded-xl p-4 border border-blue-200">

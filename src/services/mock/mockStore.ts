@@ -11,6 +11,8 @@ import {
   JobStatus,
   DisruptionRecord,
   JobPaymentRecord,
+  AssignmentOfferItem,
+  OfferStatus,
 } from '../../types';
 
 import {
@@ -24,8 +26,18 @@ import {
   SEED_NOTIFICATIONS,
   SEED_AUDIT_LOGS,
   SEED_POLICIES,
+  MYSURU_LOCALITIES,
 } from '../../data/seedData';
-import { evaluateAllCandidatesForJob } from '../scheduling/engine';
+import { evaluateAllCandidatesForJob, calculateDistanceKm } from '../scheduling/engine';
+
+export const DEMO_ACCEPTANCE_TIMEOUT_SECONDS = 60;
+
+export function getTechnicianLocationCoords(tech: Electrician): { lat: number; lng: number } {
+  if (tech.currentLocation && typeof tech.currentLocation.lat === 'number' && typeof tech.currentLocation.lng === 'number') {
+    return { lat: tech.currentLocation.lat, lng: tech.currentLocation.lng };
+  }
+  return { lat: 12.3025, lng: 76.6315 }; // Central Mysuru fallback
+}
 
 interface StoreData {
   users: User[];
@@ -89,6 +101,10 @@ class MockStore {
   constructor() {
     this.data = this.loadFromStorage();
     this.purgeWaterTankData();
+    this.checkExpiredOffers();
+    setInterval(() => {
+      this.checkExpiredOffers();
+    }, 2000);
   }
 
   private loadFromStorage(): StoreData {
@@ -497,11 +513,14 @@ class MockStore {
       description: data.description,
       category: data.category,
       priority: data.priority,
-      status: 'validated',
+      status: 'awaiting_approval',
       location: data.location,
       customerId: data.customerId,
       customerName: data.customerName,
       customerPhone: data.customerPhone,
+      customerEmail: data.customerEmail,
+      attachments: data.attachments || [],
+      additionalInstructions: data.additionalInstructions || '',
       estimatedDurationHours: 2.0,
       requiredSkills,
       requiredEquipment,
@@ -509,6 +528,8 @@ class MockStore {
       preferredTimeWindow: data.preferredTimeWindow,
       assignedElectricianId: null,
       assignedElectricianName: null,
+      assignmentHistory: [],
+      currentOffer: null,
       timeline: [
         {
           status: 'submitted',
@@ -529,45 +550,10 @@ class MockStore {
       updatedAt: new Date().toISOString(),
     };
 
-    // Automated Scheduling Engine runs immediately
-    const rec = evaluateAllCandidatesForJob(newJob, this.data.electricians, this.data.policies.weights);
-    if (rec.recommendedElectrician) {
-      const topTech = this.getElectricianById(rec.recommendedElectrician.electricianId);
-      if (topTech) {
-        newJob.assignedElectricianId = topTech.id;
-        newJob.assignedElectricianName = topTech.name;
-        newJob.status = 'dispatched';
-        newJob.dispatchType = 'automatic';
-        newJob.scheduledStartTime = '09:30 AM IST';
-        newJob.scheduledEndTime = '11:45 AM IST';
-        topTech.currentWorkload = Number((topTech.currentWorkload + newJob.estimatedDurationHours).toFixed(1));
-        topTech.status = 'busy';
-        topTech.currentJobId = newJob.id;
-
-        newJob.timeline.push({
-          status: 'dispatched',
-          timestamp: new Date().toISOString(),
-          updatedBy: 'Automated Scheduling Engine',
-          role: 'supervisor',
-          notes: `Automatically assigned to ${topTech.name} (${rec.recommendedElectrician.overallScore}% match, ~${rec.recommendedElectrician.metrics.estimatedDistanceKm} km).`,
-        });
-
-        // Notify Technician
-        this.addNotification({
-          targetRole: 'technician',
-          targetUserId: topTech.userId,
-          title: 'New Automated Job Assignment',
-          message: `You have been automatically assigned to ${newJob.id}: ${newJob.title} in ${data.location.address}`,
-          type: 'info',
-          linkUrl: '/technician/jobs',
-        });
-      }
-    }
-
     const newRequest: ServiceRequest = {
       ...data,
       id: newId,
-      status: newJob.status,
+      status: 'awaiting_approval',
       submittedAt: new Date().toISOString(),
       validatedAt: new Date().toISOString(),
       associatedJobId: jobId,
@@ -584,16 +570,11 @@ class MockStore {
       entityType: 'service_request',
       entityId: newId,
       newValue: newRequest.title,
-      reason: `Customer submitted new electrical complaint in ${data.location.address}. Automated engine processed and assigned ticket ${jobId}.`,
+      reason: `Customer submitted new electrical complaint in ${data.location.address}. Automated 1-by-1 assignment initiated for ticket ${jobId}.`,
     });
 
-    this.addNotification({
-      targetRole: 'supervisor',
-      title: 'New Service Request & Auto-Assigned',
-      message: `${newId} (${newRequest.title}) was automatically scheduled for ${newJob.assignedElectricianName || 'Standby'}.`,
-      type: newRequest.priority === 'emergency' ? 'alert' : 'info',
-      linkUrl: `/supervisor/jobs`,
-    });
+    // Feature 1: Intelligent one-by-one automatic electrician assignment with 60-second acceptance timeout
+    this.startAutomaticAssignment(newJob.id);
 
     this.save();
     return newRequest;
@@ -732,10 +713,12 @@ class MockStore {
 
   // --- Jobs ---
   public getJobs(): Job[] {
+    this.checkExpiredOffers();
     return [...this.data.jobs];
   }
 
   public getJobById(id: string): Job | undefined {
+    this.checkExpiredOffers();
     return this.data.jobs.find((j) => j.id === id);
   }
 
@@ -749,6 +732,523 @@ class MockStore {
     };
     this.save();
     return this.data.jobs[index];
+  }
+
+  // =========================================================================
+  // FEATURE 1: 1-BY-1 AUTOMATIC ELECTRICIAN ASSIGNMENT (60s TIMEOUT)
+  // =========================================================================
+
+  public startAutomaticAssignment(jobId: string): AssignmentOfferItem | null {
+    const job = this.data.jobs.find((j) => j.id === jobId);
+    if (!job) return null;
+
+    // Guard: If job is already assigned or closed/completed, do nothing
+    if (
+      job.status === 'assigned' ||
+      job.status === 'dispatched' ||
+      job.status === 'acknowledged' ||
+      job.status === 'en_route' ||
+      job.status === 'in_progress' ||
+      job.status === 'completed' ||
+      job.status === 'closed'
+    ) {
+      return null;
+    }
+
+    // Set of technician IDs that have already declined or timed out on this job
+    const priorDeclinedTechIds = new Set(
+      (job.assignmentHistory || []).map((o) => o.technicianId)
+    );
+
+    // Filter candidate electricians based on availability, account status, and workload
+    const eligibleTechs = this.data.electricians.filter((tech) => {
+      // 1. Account status must be active (or undefined which defaults to active)
+      if (tech.accountStatus === 'inactive' || tech.accountStatus === 'suspended') return false;
+      // 2. Must be in available status
+      if (tech.status !== 'available') return false;
+      // 3. Must not be currently handling another job
+      if (tech.currentJobId) return false;
+      // 4. Must not have already received an offer for this complaint
+      if (priorDeclinedTechIds.has(tech.id)) return false;
+      return true;
+    });
+
+    if (eligibleTechs.length === 0) {
+      // All candidate electricians exhausted!
+      job.status = 'awaiting_assignment';
+      job.currentOffer = null;
+      job.timeline.push({
+        status: 'awaiting_assignment',
+        timestamp: new Date().toISOString(),
+        updatedBy: 'Automated Assignment Engine',
+        role: 'supervisor',
+        notes: `No eligible electricians available (${priorDeclinedTechIds.size} prior candidate attempts failed/exhausted). Moved to Awaiting Assignment queue for supervisor manual intervention.`,
+      });
+
+      if (job.requestId) {
+        const req = this.getServiceRequestById(job.requestId);
+        if (req) req.status = 'awaiting_assignment';
+      }
+
+      this.addNotification({
+        targetRole: 'supervisor',
+        title: 'Assignment Exhausted: Manual Action Needed',
+        message: `Complaint ${job.id} (${job.title}) has exhausted all eligible electricians. Please assign manually.`,
+        type: 'warning',
+        linkUrl: '/supervisor/overview',
+      });
+
+      this.save();
+      return null;
+    }
+
+    // Sort eligible electricians by skill relevance and proximity
+    eligibleTechs.sort((a, b) => {
+      const aSkillsMatch = (job.requiredSkills || []).filter((s) =>
+        a.skills.some((sk) => sk.toLowerCase().includes(s.toLowerCase()))
+      ).length;
+      const bSkillsMatch = (job.requiredSkills || []).filter((s) =>
+        b.skills.some((sk) => sk.toLowerCase().includes(s.toLowerCase()))
+      ).length;
+
+      const locA = getTechnicianLocationCoords(a);
+      const locB = getTechnicianLocationCoords(b);
+      const distA = calculateDistanceKm(job.location.lat, job.location.lng, locA.lat, locA.lng);
+      const distB = calculateDistanceKm(job.location.lat, job.location.lng, locB.lat, locB.lng);
+
+      if (aSkillsMatch > 0 && bSkillsMatch === 0) return -1;
+      if (bSkillsMatch > 0 && aSkillsMatch === 0) return 1;
+      return distA - distB;
+    });
+
+    const chosenTech = eligibleTechs[0];
+    const techLoc = getTechnicianLocationCoords(chosenTech);
+    const distanceKm = calculateDistanceKm(job.location.lat, job.location.lng, techLoc.lat, techLoc.lng);
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + DEMO_ACCEPTANCE_TIMEOUT_SECONDS * 1000);
+    const offerCode = `OFF-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+    const newOffer: AssignmentOfferItem = {
+      offerId: offerCode,
+      jobId: job.id,
+      jobTitle: job.title,
+      category: job.category,
+      priority: job.priority,
+      customerName: job.customerName,
+      customerPhone: job.customerPhone,
+      customerAddress: job.location.address,
+      customerLocation: job.location,
+      description: job.description,
+      attachments: job.attachments,
+      additionalInstructions: job.additionalInstructions,
+      technicianId: chosenTech.id,
+      technicianName: chosenTech.name,
+      status: 'offered',
+      offeredAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      attemptNumber: (job.assignmentHistory?.length || 0) + 1,
+      estimatedDistanceKm: distanceKm,
+    };
+
+    job.currentOffer = newOffer;
+    if (!job.assignmentHistory) job.assignmentHistory = [];
+    job.assignmentHistory.push(newOffer);
+    job.status = 'awaiting_approval';
+
+    if (job.requestId) {
+      const req = this.getServiceRequestById(job.requestId);
+      if (req) req.status = 'awaiting_approval';
+    }
+
+    job.timeline.push({
+      status: 'awaiting_approval',
+      timestamp: now.toISOString(),
+      updatedBy: 'Automated Assignment Engine',
+      role: 'supervisor',
+      notes: `Offer #${newOffer.attemptNumber} dispatched to nearest available electrician ${chosenTech.name} (~${distanceKm.toFixed(1)} km). 60s acceptance countdown active.`,
+    });
+
+    // Notify Technician
+    this.addNotification({
+      targetRole: 'technician',
+      targetUserId: chosenTech.userId,
+      title: 'Incoming Job Offer (60s to Accept)',
+      message: `New electrical complaint ${job.id}: ${job.title} at ${job.location.address} (~${distanceKm.toFixed(1)} km). Click to view details and accept.`,
+      type: 'warning',
+      linkUrl: '/technician/jobs',
+    });
+
+    // Notify Customer
+    this.addNotification({
+      targetRole: 'customer',
+      targetUserId: job.customerId,
+      title: 'Finding Nearest Electrician',
+      message: `Your complaint is being offered to ${chosenTech.name} (~${distanceKm.toFixed(1)} km away). Awaiting acceptance...`,
+      type: 'info',
+      linkUrl: '/customer/requests',
+    });
+
+    this.save();
+    return newOffer;
+  }
+
+  public acceptAssignmentOffer(jobId: string, electricianId: string, actorUser: User): Job | null {
+    const job = this.data.jobs.find((j) => j.id === jobId);
+    if (!job) return null;
+
+    const offer = job.currentOffer;
+    if (!offer || offer.technicianId !== electricianId) {
+      throw new Error('No active assignment offer found for this technician on this job.');
+    }
+
+    // Check server timestamp
+    const nowMs = Date.now();
+    const expiresMs = new Date(offer.expiresAt).getTime();
+    if (nowMs > expiresMs || offer.status !== 'offered') {
+      offer.status = 'timed_out';
+      offer.respondedAt = new Date().toISOString();
+      offer.responseReason = '60-second acceptance timeout expired';
+      job.currentOffer = null;
+      this.startAutomaticAssignment(job.id);
+      throw new Error('This offer has expired after 60 seconds. A new technician is being contacted.');
+    }
+
+    const tech = this.getElectricianById(electricianId);
+    if (!tech) return null;
+
+    offer.status = 'accepted';
+    offer.respondedAt = new Date().toISOString();
+
+    job.assignedElectricianId = tech.id;
+    job.assignedElectricianName = tech.name;
+    job.status = 'assigned';
+    job.dispatchType = 'automatic';
+    job.scheduledStartTime = '10:00 AM IST';
+    job.scheduledEndTime = '12:00 PM IST';
+    job.currentOffer = null;
+
+    tech.status = 'busy';
+    tech.currentJobId = job.id;
+    tech.currentWorkload = Number((tech.currentWorkload + (job.estimatedDurationHours || 2.0)).toFixed(1));
+    tech.jobsCompletedTotal = tech.jobsCompletedTotal || 0;
+
+    if (!tech.assignedJobHistory) tech.assignedJobHistory = [];
+    if (!tech.assignedJobHistory.includes(job.id)) {
+      tech.assignedJobHistory.push(job.id);
+    }
+
+    if (job.requestId) {
+      const req = this.getServiceRequestById(job.requestId);
+      if (req) req.status = 'assigned';
+    }
+
+    job.timeline.push({
+      status: 'assigned',
+      timestamp: new Date().toISOString(),
+      updatedBy: actorUser.name,
+      role: 'technician',
+      notes: `Offer accepted by ${tech.name} within 60-second window. Job successfully assigned.`,
+    });
+
+    this.addNotification({
+      targetRole: 'customer',
+      targetUserId: job.customerId,
+      title: 'Electrician Assigned & Confirmed!',
+      message: `${tech.name} accepted your complaint ${job.id} and is preparing to attend your location.`,
+      type: 'success',
+      linkUrl: '/customer/requests',
+    });
+
+    this.addNotification({
+      targetRole: 'supervisor',
+      title: 'Job Assignment Accepted',
+      message: `Job ${job.id} accepted by ${tech.name} (Offer #${offer.attemptNumber}).`,
+      type: 'success',
+      linkUrl: '/supervisor/overview',
+    });
+
+    this.logAudit({
+      userId: actorUser.id,
+      userName: actorUser.name,
+      userRole: actorUser.role,
+      action: 'OFFER_ACCEPTED',
+      entityType: 'job',
+      entityId: job.id,
+      newValue: tech.name,
+      reason: `Electrician accepted assignment offer within 60s deadline.`,
+    });
+
+    this.save();
+    return job;
+  }
+
+  public rejectAssignmentOffer(jobId: string, electricianId: string, reason: string, actorUser: User): Job | null {
+    const job = this.data.jobs.find((j) => j.id === jobId);
+    if (!job) return null;
+
+    const offer = job.currentOffer;
+    if (offer && offer.technicianId === electricianId) {
+      offer.status = 'rejected';
+      offer.respondedAt = new Date().toISOString();
+      offer.responseReason = reason || 'Technician declined request';
+      job.currentOffer = null;
+
+      job.timeline.push({
+        status: 'awaiting_approval',
+        timestamp: new Date().toISOString(),
+        updatedBy: actorUser.name,
+        role: 'technician',
+        notes: `Offer #${offer.attemptNumber} rejected by ${offer.technicianName} ("${offer.responseReason}"). Searching for next nearest electrician...`,
+      });
+
+      this.logAudit({
+        userId: actorUser.id,
+        userName: actorUser.name,
+        userRole: actorUser.role,
+        action: 'OFFER_REJECTED',
+        entityType: 'job',
+        entityId: job.id,
+        reason: `Electrician ${offer.technicianName} rejected offer: ${offer.responseReason}. Sequential retry initiated.`,
+      });
+
+      // Automatically offer to next nearest eligible electrician!
+      this.startAutomaticAssignment(job.id);
+    }
+
+    this.save();
+    return job;
+  }
+
+  public checkExpiredOffers(): void {
+    const nowMs = Date.now();
+    let hasChanges = false;
+
+    for (const job of this.data.jobs) {
+      if (job.currentOffer && job.currentOffer.status === 'offered') {
+        const expiresMs = new Date(job.currentOffer.expiresAt).getTime();
+        if (nowMs > expiresMs) {
+          job.currentOffer.status = 'timed_out';
+          job.currentOffer.respondedAt = new Date().toISOString();
+          job.currentOffer.responseReason = '60-second acceptance timeout expired';
+          const expiredTechName = job.currentOffer.technicianName;
+          const attemptNum = job.currentOffer.attemptNumber;
+          job.currentOffer = null;
+
+          job.timeline.push({
+            status: 'awaiting_approval',
+            timestamp: new Date().toISOString(),
+            updatedBy: 'Automated Assignment Engine',
+            role: 'supervisor',
+            notes: `Offer #${attemptNum} to ${expiredTechName} expired after 60s without response. Reassigning to next nearest electrician...`,
+          });
+
+          hasChanges = true;
+          this.startAutomaticAssignment(job.id);
+        }
+      }
+    }
+
+    if (hasChanges) {
+      this.save();
+    }
+  }
+
+  // =========================================================================
+  // FEATURE 3: SUPERVISOR ELECTRICIAN MANAGEMENT & HIRING
+  // =========================================================================
+
+  public addElectrician(
+    data: {
+      name: string;
+      email: string;
+      phone: string;
+      registeredAddress: string;
+      skills: string[];
+      certifications?: string[];
+      experienceYears?: number;
+      emergencyContact?: string;
+      shift?: string;
+    },
+    supervisorUser: User
+  ): { electrician: Electrician; tempPassword: string } {
+    const techCount = this.data.electricians.length;
+    const employeeId = `MYS-TECH-${100 + techCount + 1}`;
+    const newId = `elec-${Date.now()}`;
+    const newUserId = `usr-tech-${Date.now()}`;
+    const tempPassword = `ElectroTech@${Math.floor(1000 + Math.random() * 9000)}!`;
+
+    const locMatch = MYSURU_LOCALITIES.find((l) =>
+      data.registeredAddress.toLowerCase().includes(l.name.toLowerCase())
+    ) || MYSURU_LOCALITIES[techCount % MYSURU_LOCALITIES.length];
+
+    const newElectrician: Electrician = {
+      id: newId,
+      userId: newUserId,
+      name: data.name,
+      employeeId,
+      phone: data.phone,
+      email: data.email,
+      avatar: `https://images.unsplash.com/photo-1544717305-2782549b5136?w=150`,
+      skills: data.skills.length > 0 ? data.skills : ['Residential Wiring', 'Commercial Lighting'],
+      certifications: data.certifications && data.certifications.length > 0
+        ? data.certifications
+        : ['Certified Electrical Safety Inspector', 'CHESCOM Certified Wireman'],
+      equipment: ['Insulated Tool Set (1000V)', 'Digital Multimeter', 'Arc Flash Gloves'],
+      shift: (data.shift as any) || 'morning',
+      shiftHours: { start: '08:00', end: '16:30' },
+      isAvailable: true,
+      status: 'available',
+      accountStatus: 'active',
+      registeredAddress: data.registeredAddress,
+      experienceYears: data.experienceYears || 3,
+      emergencyContact: data.emergencyContact || '+91 98450 00000',
+      isTemporaryPassword: true,
+      temporaryPasswordPlain: tempPassword,
+      currentJobId: null,
+      currentWorkload: 0,
+      maxDailyHours: 8.5,
+      currentLocation: {
+        lat: locMatch.lat,
+        lng: locMatch.lng,
+        lastUpdated: new Date().toISOString(),
+        isSimulated: true,
+      },
+      rating: 5.0,
+      jobsCompletedTotal: 0,
+      assignedJobHistory: [],
+    };
+
+    const newUser: User = {
+      id: newUserId,
+      name: data.name,
+      email: data.email,
+      role: 'technician',
+      phone: data.phone,
+      employeeId,
+      avatar: newElectrician.avatar,
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    this.data.electricians.unshift(newElectrician);
+    this.data.users.unshift(newUser);
+
+    this.logAudit({
+      userId: supervisorUser.id,
+      userName: supervisorUser.name,
+      userRole: supervisorUser.role,
+      action: 'ELECTRICIAN_REGISTERED',
+      entityType: 'electrician',
+      entityId: newId,
+      newValue: data.name,
+      reason: `Supervisor registered new electrician ${data.name} (${employeeId}) with skills: ${newElectrician.skills.join(', ')}`,
+    });
+
+    this.addNotification({
+      targetRole: 'supervisor',
+      title: 'New Electrician Hired & Registered',
+      message: `${data.name} (${employeeId}) successfully registered and available for automated dispatch.`,
+      type: 'success',
+      linkUrl: '/supervisor/workforce',
+    });
+
+    this.save();
+    return { electrician: newElectrician, tempPassword };
+  }
+
+  public updateElectricianAccountStatus(
+    id: string,
+    status: 'active' | 'inactive' | 'suspended',
+    supervisorUser: User,
+    reason?: string
+  ): Electrician | null {
+    const tech = this.getElectricianById(id);
+    if (!tech) return null;
+
+    const prev = tech.accountStatus || 'active';
+    tech.accountStatus = status;
+
+    if (status === 'inactive' || status === 'suspended') {
+      tech.isAvailable = false;
+      tech.status = 'off_duty';
+    } else if (status === 'active' && !tech.currentJobId) {
+      tech.isAvailable = true;
+      tech.status = 'available';
+    }
+
+    const u = this.data.users.find((user) => user.id === tech.userId);
+    if (u) {
+      u.active = status === 'active';
+    }
+
+    this.logAudit({
+      userId: supervisorUser.id,
+      userName: supervisorUser.name,
+      userRole: supervisorUser.role,
+      action: 'ELECTRICIAN_STATUS_CHANGED',
+      entityType: 'electrician',
+      entityId: id,
+      previousValue: prev,
+      newValue: status,
+      reason: reason || `Supervisor updated electrician status to ${status}`,
+    });
+
+    this.save();
+    return tech;
+  }
+
+  public resetElectricianPassword(id: string, supervisorUser: User): string {
+    const tech = this.getElectricianById(id);
+    if (!tech) throw new Error('Electrician not found');
+
+    const newTempPassword = `ElectroTech@${Math.floor(1000 + Math.random() * 9000)}!`;
+    tech.isTemporaryPassword = true;
+    tech.temporaryPasswordPlain = newTempPassword;
+
+    this.logAudit({
+      userId: supervisorUser.id,
+      userName: supervisorUser.name,
+      userRole: supervisorUser.role,
+      action: 'PASSWORD_RESET_GENERATED',
+      entityType: 'electrician',
+      entityId: id,
+      reason: `Supervisor generated a new temporary password for ${tech.name}`,
+    });
+
+    this.save();
+    return newTempPassword;
+  }
+
+  public updateElectricianProfile(
+    id: string,
+    updates: Partial<Electrician>,
+    supervisorUser: User
+  ): Electrician | null {
+    const tech = this.getElectricianById(id);
+    if (!tech) return null;
+
+    Object.assign(tech, updates);
+
+    const u = this.data.users.find((user) => user.id === tech.userId);
+    if (u) {
+      if (updates.name) u.name = updates.name;
+      if (updates.phone) u.phone = updates.phone;
+      if (updates.email) u.email = updates.email;
+    }
+
+    this.logAudit({
+      userId: supervisorUser.id,
+      userName: supervisorUser.name,
+      userRole: supervisorUser.role,
+      action: 'ELECTRICIAN_PROFILE_UPDATED',
+      entityType: 'electrician',
+      entityId: id,
+      reason: `Supervisor updated profile details for ${tech.name}`,
+    });
+
+    this.save();
+    return tech;
   }
 
   public assignAndDispatchJob(

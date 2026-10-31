@@ -72,6 +72,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             section: 'Grid Operations Supervision',
             items: [
               { label: 'Operational Overview', path: '/supervisor/overview', icon: LayoutDashboard },
+              { label: 'Live Assignment Monitor', path: '/supervisor/assignment-monitor', icon: Radio },
+              { label: 'Electrician Management', path: '/supervisor/electricians', icon: HardHat },
               { label: 'Mysuru Fleet Map', path: '/supervisor/map', icon: Map },
               { label: 'Job Monitoring', path: '/supervisor/jobs', icon: Briefcase },
               { label: 'Workforce Monitoring', path: '/supervisor/workforce', icon: Users },
